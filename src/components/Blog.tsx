@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Send, Image as ImageIcon, Type, PenTool, Flame, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import indiaImg from '../image/india_hq.png';
 
 export default function Blog() {
   const [showEditor, setShowEditor] = useState(false);
@@ -122,19 +123,11 @@ export default function Blog() {
                 <div className="absolute -inset-4 bg-red-500/10 rounded-[60px] blur-2xl group-hover:bg-red-500/20 transition-all duration-700"></div>
                 <div className="relative h-[450px] lg:h-[600px] rounded-[48px] overflow-hidden border border-red-900/20 shadow-2xl">
                   <img 
-                    src="https://images.unsplash.com/photo-1504370805625-d32c54b16100?auto=format&fit=crop&w=1000&q=80" 
+                    src={indiaImg} 
                     alt="India Heatwave — Scorching Summer 2026" 
                     className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-red-900/70 via-orange-900/20 to-transparent"></div>
-                  {/* Danger stat overlay */}
-                  <div className="absolute bottom-6 left-6 right-6">
-                    <div className="inline-flex items-baseline gap-1">
-                      <span className="text-[4rem] font-black text-red-400 leading-none drop-shadow-2xl">95</span>
-                      <span className="text-white/80 text-lg font-bold">/100</span>
-                    </div>
-                    <div className="text-white/60 text-[0.7rem] uppercase tracking-[2px] font-bold">World's hottest cities are in India</div>
-                  </div>
                 </div>
               </div>
 
