@@ -304,11 +304,11 @@ export default function Admin() {
                       <div key={r.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all">
                         <div className="flex justify-between items-start gap-2">
                           <div>
-                            <div className="text-[0.8rem] font-bold text-white">{r.name}</div>
-                            <div className="text-[0.6rem] text-white/40">{r.email}</div>
-                            {r.phone && <div className="text-[0.55rem] text-white/30 mt-0.5">{r.phone}</div>}
+                            <div className="text-[0.85rem] font-bold text-white">{r.name}</div>
+                            <div className="text-[0.75rem] text-white/70">{r.email}</div>
+                            {r.phone && <div className="text-[0.7rem] text-white/55 mt-0.5">{r.phone}</div>}
                           </div>
-                          <span className="px-2 py-1 bg-sage/10 rounded-lg text-[0.5rem] font-black text-sage uppercase tracking-[1px]">
+                          <span className="px-2 py-1 bg-white/10 rounded-lg text-[0.5rem] font-black text-white uppercase tracking-[1px]">
                             {r.participants || 1} person{(r.participants || 1) > 1 ? 's' : ''}
                           </span>
                         </div>
@@ -361,8 +361,8 @@ export default function Admin() {
                       <div className="flex justify-between items-start gap-2 mb-1">
                         <div>
                           <div className="text-[0.75rem] font-bold text-white">{v.name}</div>
-                          <div className="text-[0.6rem] text-white/40">{v.email}</div>
-                          {v.phone && <div className="text-[0.55rem] text-white/30">{v.phone}</div>}
+                          <div className="text-[0.75rem] text-white/60">{v.email}</div>
+                          {v.phone && <div className="text-[0.7rem] text-white/50">{v.phone}</div>}
                         </div>
                         <span className="shrink-0 px-2 py-1 bg-sage/10 rounded-lg text-[0.5rem] font-black text-sage uppercase tracking-[1px]">
                           {v.interest}

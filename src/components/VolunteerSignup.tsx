@@ -121,13 +121,13 @@ export default function VolunteerSignup() {
               <select
                 value={formData.interest}
                 onChange={e => setFormData({ ...formData, interest: e.target.value })}
-                className="w-full bg-white/5 border border-white/10 rounded-[20px] px-5 py-4 outline-none focus:border-sage/50 focus:bg-white/[0.08] transition-all appearance-none"
+                className="w-full bg-[#0f1f15] border border-white/10 rounded-[20px] px-5 py-4 text-white outline-none focus:border-sage/50 transition-all appearance-none"
               >
-                <option value="Coastal Cleanup">🏖️ Coastal Cleanup</option>
-                <option value="Reforestation">🌳 Reforestation</option>
-                <option value="Wildlife Protection">🦁 Wildlife Protection</option>
-                <option value="Urban Farming">🌱 Urban Farming</option>
-                <option value="River Restoration">💧 River Restoration</option>
+                <option value="Coastal Cleanup" className="bg-[#0f1f15]">🏖️ Coastal Cleanup</option>
+                <option value="Reforestation" className="bg-[#0f1f15]">🌳 Reforestation</option>
+                <option value="Wildlife Protection" className="bg-[#0f1f15]">🦁 Wildlife Protection</option>
+                <option value="Urban Farming" className="bg-[#0f1f15]">🌱 Urban Farming</option>
+                <option value="River Restoration" className="bg-[#0f1f15]">💧 River Restoration</option>
               </select>
             </div>
           </div>

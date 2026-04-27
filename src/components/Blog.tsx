@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Send, Image as ImageIcon, Type, PenTool, Flame, Clock, Share2 } from 'lucide-react';
+import { ArrowLeft, Send, Image as ImageIcon, Type, PenTool, Flame, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Blog() {
@@ -119,52 +119,76 @@ export default function Blog() {
             {/* Featured Story View: Left Image, Right Content */}
             <div className="flex flex-col lg:flex-row gap-16 items-center reveal">
               <div className="w-full lg:w-1/2 relative group">
-                <div className="absolute -inset-4 bg-sage/10 rounded-[60px] blur-2xl group-hover:bg-sage/20 transition-all duration-700"></div>
-                <div className="relative h-[450px] lg:h-[600px] rounded-[48px] overflow-hidden border border-forest/10 shadow-2xl">
+                <div className="absolute -inset-4 bg-red-500/10 rounded-[60px] blur-2xl group-hover:bg-red-500/20 transition-all duration-700"></div>
+                <div className="relative h-[450px] lg:h-[600px] rounded-[48px] overflow-hidden border border-red-900/20 shadow-2xl">
                   <img 
-                    src="https://images.unsplash.com/photo-1561484930-998b6a7b22e8?auto=format&fit=crop&w=1000&q=80" 
-                    alt="Heatwave India" 
+                    src="https://images.unsplash.com/photo-1504370805625-d32c54b16100?auto=format&fit=crop&w=1000&q=80" 
+                    alt="India Heatwave — Scorching Summer 2026" 
                     className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-forest/60 via-transparent to-transparent"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-red-900/70 via-orange-900/20 to-transparent"></div>
+                  {/* Danger stat overlay */}
+                  <div className="absolute bottom-6 left-6 right-6">
+                    <div className="inline-flex items-baseline gap-1">
+                      <span className="text-[4rem] font-black text-red-400 leading-none drop-shadow-2xl">95</span>
+                      <span className="text-white/80 text-lg font-bold">/100</span>
+                    </div>
+                    <div className="text-white/60 text-[0.7rem] uppercase tracking-[2px] font-bold">World's hottest cities are in India</div>
+                  </div>
                 </div>
               </div>
 
               <div className="w-full lg:w-1/2 space-y-8">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1.5 px-3 py-1 bg-forest text-white rounded-full text-[0.6rem] font-black uppercase tracking-[2px]">
-                      <Flame className="w-3 h-3 text-gold" /> Climate Alert
+                    <span className="flex items-center gap-1.5 px-3 py-1 bg-red-600 text-white rounded-full text-[0.6rem] font-black uppercase tracking-[2px]">
+                      <Flame className="w-3 h-3 text-orange-300" /> Climate Emergency
                     </span>
                     <span className="text-[0.6rem] text-forest/40 font-bold uppercase tracking-[2px] flex items-center gap-2">
-                      <Clock className="w-3 h-3" /> 5 Min Read
+                      <Clock className="w-3 h-3" /> 4 Min Read • Apr 24, 2026
                     </span>
                   </div>
                   <h1 className="font-display text-[clamp(2.5rem,5vw,4rem)] font-black leading-[1.05] tracking-[-2px] text-forest">
-                    India Sizzles: <em className="italic font-normal text-sage">19 of 20</em> Hottest Cities Worldwide
+                    India's Hotbox Crisis: <em className="not-italic font-black" style={{ color: '#dc2626' }}>95</em> of 100 World's Hottest Cities Are Here
                   </h1>
                 </div>
 
-                <div className="space-y-6 text-forest/80 text-[1.1rem] leading-relaxed font-medium">
+                <div className="space-y-6 text-forest/80 text-[1.05rem] leading-relaxed font-medium">
                   <p>
-                    A staggering new global report confirms that this summer, India has become the epicenter of extreme heat. With 19 out of the 20 hottest cities on Earth currently located within the subcontinent, the call for urban restoration has never been more urgent.
+                    India is at the epicentre of a global heat surge. According to real-time data from AQI.in recorded at 5:00 PM on April 24, 2026, an overwhelming <strong className="text-red-600 font-black">95 out of the world's 100 hottest cities</strong> are located within the subcontinent — a staggering statistic that underscores the severity of the ongoing heatwave.
                   </p>
-                  <p className="text-[0.95rem] opacity-70">
-                    From the melting asphalt of Delhi to the record-breaking peaks in Nagpur, the 'Heat Island Effect' is no longer a future threat—it is our current reality. At EcoVerse, we are responding with localized micro-forests and water body revival strategies.
+                  <p className="text-[0.95rem] opacity-80">
+                    From central India to the Indo-Gangetic plains, temperatures have soared past <strong>40°C</strong> in dozens of cities, with several locations inching closer to <strong>45°C</strong>. States such as Maharashtra, Telangana, Madhya Pradesh, Uttar Pradesh and Odisha are among the worst affected.
                   </p>
+                  <p className="text-[0.9rem] opacity-70">
+                    Meteorologists attribute the surge to persistent dry winds, clear skies, and delayed pre-monsoon activity. The India Meteorological Department (IMD) has issued heatwave warnings across several regions — urban heat island effects and shrinking green cover are amplifying the impact.
+                  </p>
+
+                  {/* Pull quote */}
+                  <blockquote className="border-l-4 border-red-500 pl-5 py-1">
+                    <p className="text-forest font-semibold italic text-[1rem]">
+                      "For now, India remains the hottest place on Earth — an extraordinary statistic that reflects the immediacy of the current heatwave and the growing challenge of extreme weather in a warming world."
+                    </p>
+                    <cite className="text-[0.7rem] text-forest/40 font-bold uppercase tracking-[1px] not-italic">— India Today Science Desk, April 24, 2026</cite>
+                  </blockquote>
                 </div>
 
                 <div className="flex items-center gap-6 pt-8 border-t border-forest/10">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-sage/20 flex items-center justify-center text-xl grayscale">🖋️</div>
+                    <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-xl">🌡️</div>
                     <div>
-                      <div className="text-[0.7rem] font-black text-forest uppercase tracking-[1px]">Dr. Ananya Sharma</div>
-                      <div className="text-[0.6rem] text-forest/40 font-bold uppercase tracking-[1px]">Chief Ecologist</div>
+                      <div className="text-[0.7rem] font-black text-forest uppercase tracking-[1px]">India Today Science Desk</div>
+                      <div className="text-[0.6rem] text-forest/40 font-bold uppercase tracking-[1px]">Climate & Science Reporting</div>
                     </div>
                   </div>
-                  <button className="ml-auto w-10 h-10 rounded-full border border-forest/10 flex items-center justify-center text-forest hover:bg-forest hover:text-white transition-all shadow-sm">
-                    <Share2 className="w-4 h-4" />
-                  </button>
+                  <a
+                    href="https://www.indiatoday.in/science/story/india-turns-into-a-hotbox-95-out-of-100-worlds-hottest-cities-today-are-in-india-2901125-2026-04-24"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-auto px-5 py-2.5 rounded-xl border border-forest/10 text-[0.65rem] font-black uppercase tracking-[2px] text-forest hover:bg-forest hover:text-white transition-all"
+                  >
+                    Read Full Article →
+                  </a>
                 </div>
               </div>
             </div>
