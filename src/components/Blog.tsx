@@ -117,72 +117,91 @@ export default function Blog() {
           </div>
         ) : (
           <div className="space-y-24">
-            {/* Featured Story View: Left Image, Right Content */}
-            <div className="flex flex-col lg:flex-row gap-16 items-center reveal">
-              <div className="w-full lg:w-1/2 relative group">
-                <div className="absolute -inset-4 bg-red-500/10 rounded-[60px] blur-2xl group-hover:bg-red-500/20 transition-all duration-700"></div>
-                <div className="relative h-[450px] lg:h-[600px] rounded-[48px] overflow-hidden border border-red-900/20 shadow-2xl">
-                  <img 
-                    src={indiaImg} 
-                    alt="India Heatwave — Scorching Summer 2026" 
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+            {/* Featured Article */}
+            <div className="flex flex-col lg:flex-row gap-10 items-stretch">
+
+              {/* Image Column */}
+              <div className="w-full lg:w-[48%] relative group flex-shrink-0">
+                <div className="absolute -inset-3 bg-red-500/8 rounded-[52px] blur-2xl group-hover:bg-red-500/15 transition-all duration-700" />
+                <div className="relative h-[380px] lg:h-full min-h-[420px] rounded-[40px] overflow-hidden border border-red-900/15 shadow-xl">
+                  <img
+                    src={indiaImg}
+                    alt="India Heatwave — Scorching Summer 2026"
+                    className="w-full h-full object-cover object-center transition-transform duration-1000 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-red-900/70 via-orange-900/20 to-transparent"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-orange-900/15 to-transparent" />
                 </div>
               </div>
 
-              <div className="w-full lg:w-1/2 space-y-8">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1.5 px-3 py-1 bg-red-600 text-white rounded-full text-[0.6rem] font-black uppercase tracking-[2px]">
-                      <Flame className="w-3 h-3 text-orange-300" /> Climate Emergency
-                    </span>
-                    <span className="text-[0.6rem] text-forest/40 font-bold uppercase tracking-[2px] flex items-center gap-2">
-                      <Clock className="w-3 h-3" /> 4 Min Read • Apr 24, 2026
-                    </span>
-                  </div>
-                  <h1 className="font-display text-[clamp(2.5rem,5vw,4rem)] font-black leading-[1.05] tracking-[-2px] text-forest">
-                    India's Hotbox Crisis: <em className="not-italic font-black" style={{ color: '#dc2626' }}>95</em> of 100 World's Hottest Cities Are Here
-                  </h1>
+              {/* Content Column */}
+              <div className="w-full lg:w-[52%] flex flex-col justify-center gap-5">
+
+                {/* Tags row */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="flex items-center gap-1.5 px-3 py-1 bg-red-600 text-white rounded-full text-[0.58rem] font-black uppercase tracking-[2px]">
+                    <Flame className="w-3 h-3 text-orange-300" /> Climate Emergency
+                  </span>
+                  <span className="text-[0.58rem] text-forest/40 font-bold uppercase tracking-[2px] flex items-center gap-1.5">
+                    <Clock className="w-3 h-3" /> 4 Min Read • Apr 24, 2026
+                  </span>
                 </div>
 
-                <div className="space-y-6 text-forest/80 text-[1.05rem] leading-relaxed font-medium">
+                {/* Heading */}
+                <h1 className="font-display text-[2rem] md:text-[2.6rem] font-black leading-[1.1] tracking-tight text-forest">
+                  India's Hotbox Crisis:{' '}
+                  <em className="not-italic font-black" style={{ color: '#dc2626' }}>95</em>
+                  {' '}of 100 World's Hottest Cities Are Here
+                </h1>
+
+                {/* Body paragraphs */}
+                <div className="space-y-3 text-forest/75 text-[0.95rem] leading-[1.7] font-medium">
                   <p>
-                    India is at the epicentre of a global heat surge. According to real-time data from AQI.in recorded at 5:00 PM on April 24, 2026, an overwhelming <strong className="text-red-600 font-black">95 out of the world's 100 hottest cities</strong> are located within the subcontinent — a staggering statistic that underscores the severity of the ongoing heatwave.
+                    India is at the epicentre of a global heat surge. According to real-time data from AQI.in recorded
+                    at 5:00 PM on April 24, 2026, an overwhelming{' '}
+                    <strong className="text-red-600 font-black">95 out of the world's 100 hottest cities</strong>
+                    {' '}are located within the subcontinent.
                   </p>
-                  <p className="text-[0.95rem] opacity-80">
-                    From central India to the Indo-Gangetic plains, temperatures have soared past <strong>40°C</strong> in dozens of cities, with several locations inching closer to <strong>45°C</strong>. States such as Maharashtra, Telangana, Madhya Pradesh, Uttar Pradesh and Odisha are among the worst affected.
+                  <p>
+                    Temperatures have soared past <strong>40°C</strong> in dozens of cities, with several inching
+                    closer to <strong>45°C</strong>. States like Maharashtra, Telangana, Madhya Pradesh, UP and Odisha
+                    are among the worst affected.
                   </p>
-                  <p className="text-[0.9rem] opacity-70">
-                    Meteorologists attribute the surge to persistent dry winds, clear skies, and delayed pre-monsoon activity. The India Meteorological Department (IMD) has issued heatwave warnings across several regions — urban heat island effects and shrinking green cover are amplifying the impact.
+                  <p>
+                    Meteorologists cite persistent dry winds, clear skies, and delayed pre-monsoon activity. Urban heat
+                    island effects and shrinking green cover are amplifying the crisis.
                   </p>
-
-                  {/* Pull quote */}
-                  <blockquote className="border-l-4 border-red-500 pl-5 py-1">
-                    <p className="text-forest font-semibold italic text-[1rem]">
-                      "For now, India remains the hottest place on Earth — an extraordinary statistic that reflects the immediacy of the current heatwave and the growing challenge of extreme weather in a warming world."
-                    </p>
-                    <cite className="text-[0.7rem] text-forest/40 font-bold uppercase tracking-[1px] not-italic">— India Today Science Desk, April 24, 2026</cite>
-                  </blockquote>
                 </div>
 
-                <div className="flex items-center gap-6 pt-8 border-t border-forest/10">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-xl">🌡️</div>
+                {/* Pull quote */}
+                <blockquote className="border-l-4 border-red-500 pl-4 py-0.5">
+                  <p className="text-forest/80 font-semibold italic text-[0.9rem] leading-relaxed">
+                    "India remains the hottest place on Earth — an extraordinary statistic that reflects the growing
+                    challenge of extreme weather in a warming world."
+                  </p>
+                  <cite className="text-[0.62rem] text-forest/35 font-bold uppercase tracking-[1px] not-italic block mt-1">
+                    — India Today Science Desk, April 24, 2026
+                  </cite>
+                </blockquote>
+
+                {/* Footer row */}
+                <div className="flex items-center gap-4 pt-4 border-t border-forest/10">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-lg">🌡️</div>
                     <div>
-                      <div className="text-[0.7rem] font-black text-forest uppercase tracking-[1px]">India Today Science Desk</div>
-                      <div className="text-[0.6rem] text-forest/40 font-bold uppercase tracking-[1px]">Climate & Science Reporting</div>
+                      <div className="text-[0.68rem] font-black text-forest uppercase tracking-[1px]">India Today Science Desk</div>
+                      <div className="text-[0.58rem] text-forest/35 font-bold uppercase tracking-[1px]">Climate & Science Reporting</div>
                     </div>
                   </div>
                   <a
                     href="https://www.indiatoday.in/science/story/india-turns-into-a-hotbox-95-out-of-100-worlds-hottest-cities-today-are-in-india-2901125-2026-04-24"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-auto px-5 py-2.5 rounded-xl border border-forest/10 text-[0.65rem] font-black uppercase tracking-[2px] text-forest hover:bg-forest hover:text-white transition-all"
+                    className="ml-auto px-4 py-2 rounded-xl border border-forest/15 text-[0.62rem] font-black uppercase tracking-[1.5px] text-forest hover:bg-forest hover:text-white transition-all whitespace-nowrap"
                   >
                     Read Full Article →
                   </a>
                 </div>
+
               </div>
             </div>
           </div>

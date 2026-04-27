@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, Users, Check, X, Image, AlertCircle } from 'lucide-react';
-import { db, storage } from '../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 
 const STATIC_EVENTS = [
@@ -83,6 +82,15 @@ export default function Admin() {
     }
   };
 
+  // Convert file to base64 data URL (no Storage needed)
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
   const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -99,21 +107,20 @@ export default function Admin() {
     }
 
     const { day, month, time } = parseDatetime(eventDate, eventTime);
-    setSubmitStatus({ type: 'loading', msg: 'Publishing event...' });
 
     let imgUrl = DEFAULT_IMG;
 
-    // Try to upload image; fall back to default if Storage rules block it
+    // Convert image to base64 — works instantly, no Firebase Storage rules needed
     if (eventImageFile) {
+      setSubmitStatus({ type: 'loading', msg: 'Processing image...' });
       try {
-        const imgRef = ref(storage, `events/${Date.now()}-${eventImageFile.name}`);
-        await uploadBytes(imgRef, eventImageFile);
-        imgUrl = await getDownloadURL(imgRef);
-      } catch (storageErr: any) {
-        console.warn('Storage upload failed, using default image:', storageErr.message);
-        // Keep DEFAULT_IMG — event still gets created
+        imgUrl = await fileToBase64(eventImageFile);
+      } catch {
+        console.warn('Image conversion failed, using default');
       }
     }
+
+    setSubmitStatus({ type: 'loading', msg: 'Saving event to Firestore...' });
 
     try {
       await addDoc(collection(db, 'events'), {
