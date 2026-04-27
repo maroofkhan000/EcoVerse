@@ -113,9 +113,13 @@ export default function Engagement() {
                 </div>
 
                 {event.isStatic ? (
-                  <button className="w-full py-4 bg-forest text-white rounded-2xl text-xs font-bold hover:bg-sage hover:text-dark transition-all shadow-lg hover:shadow-sage/20">
+                  <Link
+                    to={`/event/${event.id}`}
+                    state={event}
+                    className="w-full py-4 bg-forest text-white rounded-2xl text-xs font-bold hover:bg-sage hover:text-dark transition-all shadow-lg hover:shadow-sage/20 text-center block"
+                  >
                     Register for Event
-                  </button>
+                  </Link>
                 ) : (
                   <Link
                     to={`/event/${event.id}`}

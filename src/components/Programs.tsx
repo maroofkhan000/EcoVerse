@@ -181,7 +181,7 @@ function ProgramCard({ prog, index }: { prog: any, index: number }) {
             {prog.tag}
           </div>
           
-          <h3 className="font-display text-[1.8rem] md:text-[2.2rem] font-bold text-white mb-4 leading-tight group-hover:text-sage transition-colors duration-300">
+          <h3 className="font-display text-[1.8rem] md:text-[2.2rem] font-bold text-white mb-4 leading-tight">
             {prog.name}
           </h3>
           

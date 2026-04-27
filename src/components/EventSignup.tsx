@@ -1,29 +1,39 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Send, CheckCircle, MapPin, Calendar } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function EventSignup() {
   const { id } = useParams<{ id: string }>();
-  const [event, setEvent] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const passedEvent = (location.state as any) || null; // Passed from Engagement for static events
+
+  const [event, setEvent] = useState<any>(passedEvent);
+  const [loading, setLoading] = useState(!passedEvent);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', participants: '1', note: '' });
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
   useEffect(() => {
-    if (!id) return;
+    // If event already loaded from state (static), skip Firestore fetch
+    if (passedEvent || !id || id.startsWith('static-')) {
+      setLoading(false);
+      return;
+    }
     getDoc(doc(db, 'events', id)).then(snap => {
       if (snap.exists()) setEvent({ id: snap.id, ...snap.data() });
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('submitting');
     try {
-      await addDoc(collection(db, 'events', id!, 'registrants'), {
+      // All registrations go to a flat 'registrations' collection
+      await addDoc(collection(db, 'registrations'), {
+        eventId: id,
+        eventTitle: event?.title || '',
         ...formData,
         participants: Number(formData.participants),
         createdAt: serverTimestamp()
@@ -67,11 +77,17 @@ export default function EventSignup() {
             Welcome aboard, <span className="text-sage font-semibold">{formData.name.split(' ')[0]}</span>!
           </p>
           <p className="text-white/40 text-sm leading-relaxed mb-10">
-            We'll reach out to <span className="text-white/70">{formData.email}</span> with event details.
+            We'll reach out at <span className="text-white/70">{formData.email}</span> with event details.
           </p>
           <div className="p-4 rounded-2xl bg-white/5 border border-white/10 mb-8 text-left space-y-2">
-            <div className="flex items-center gap-2 text-[0.75rem] text-white/60"><Calendar className="w-3.5 h-3.5 text-sage shrink-0" />{event.date} {event.month} • {event.time}</div>
-            <div className="flex items-center gap-2 text-[0.75rem] text-white/60"><MapPin className="w-3.5 h-3.5 text-sage shrink-0" />{event.location}</div>
+            <div className="flex items-center gap-2 text-[0.75rem] text-white/60">
+              <Calendar className="w-3.5 h-3.5 text-sage shrink-0" />
+              {event.date} {event.month} • {event.time}
+            </div>
+            <div className="flex items-center gap-2 text-[0.75rem] text-white/60">
+              <MapPin className="w-3.5 h-3.5 text-sage shrink-0" />
+              {event.location}
+            </div>
           </div>
           <Link to="/" className="inline-block px-10 py-4 bg-forest text-white font-bold rounded-2xl transition-all duration-300 hover:bg-sage hover:text-dark hover:scale-105">
             Back to Home
@@ -86,7 +102,6 @@ export default function EventSignup() {
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-sage/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-forest/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
-      {/* Nav */}
       <nav className="relative z-10 p-8 md:px-16 flex items-center justify-between">
         <Link to="/" className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition-all group">
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
@@ -97,26 +112,40 @@ export default function EventSignup() {
       <main className="relative z-10 max-w-2xl mx-auto px-6 pb-24 pt-2">
         {/* Event Hero Card */}
         <div className="rounded-[32px] overflow-hidden border border-white/10 mb-10 group">
-          <div className="h-52 relative overflow-hidden">
-            <img src={event.img} alt={event.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-            <span className="absolute bottom-4 left-5 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[0.55rem] font-black uppercase tracking-[2px] border border-white/20">
-              {event.tag}
-            </span>
-          </div>
+          {event.img && (
+            <div className="h-52 relative overflow-hidden">
+              <img
+                src={event.img}
+                alt={event.title}
+                className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+              {event.tag && (
+                <span className="absolute bottom-4 left-5 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[0.55rem] font-black uppercase tracking-[2px] border border-white/20">
+                  {event.tag}
+                </span>
+              )}
+            </div>
+          )}
           <div className="p-6 bg-white/5">
             <h1 className="font-display text-2xl font-bold text-white mb-4">{event.title}</h1>
             <div className="flex flex-wrap gap-4 text-[0.75rem] text-white/50">
-              <span className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-sage" />{event.date} {event.month} • {event.time}</span>
-              <span className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-sage" />{event.location}</span>
+              <span className="flex items-center gap-2">
+                <Calendar className="w-3.5 h-3.5 text-sage" />{event.date} {event.month} • {event.time}
+              </span>
+              <span className="flex items-center gap-2">
+                <MapPin className="w-3.5 h-3.5 text-sage" />{event.location}
+              </span>
             </div>
             {event.description && <p className="text-[0.85rem] text-white/40 mt-3 leading-relaxed">{event.description}</p>}
           </div>
         </div>
 
-        {/* Registration Form */}
+        {/* Form header */}
         <div className="mb-6">
-          <h2 className="font-display text-3xl font-black tracking-tight mb-1">Register <em className="text-sage italic font-normal">for this event</em></h2>
+          <h2 className="font-display text-3xl font-black tracking-tight mb-1">
+            Register <em className="text-sage italic font-normal">for this event</em>
+          </h2>
           <p className="text-white/40 text-sm">Fill in your details to secure your spot.</p>
         </div>
 
@@ -147,7 +176,7 @@ export default function EventSignup() {
               <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/30 ml-1">Participants</label>
               <select value={formData.participants} onChange={e => setFormData({ ...formData, participants: e.target.value })}
                 className="w-full bg-white/5 border border-white/10 rounded-[20px] px-5 py-4 outline-none focus:border-sage/50 transition-all appearance-none">
-                {[1,2,3,4,5].map(n => <option key={n} value={n}>{n} person{n > 1 ? 's' : ''}</option>)}
+                {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} person{n > 1 ? 's' : ''}</option>)}
               </select>
             </div>
           </div>
@@ -159,7 +188,9 @@ export default function EventSignup() {
               className="w-full bg-white/5 border border-white/10 rounded-[24px] px-6 py-5 outline-none focus:border-sage/50 transition-all resize-none placeholder:text-white/20" />
           </div>
 
-          {status === 'error' && <p className="text-red-400 text-[0.75rem] text-center">Something went wrong. Please try again.</p>}
+          {status === 'error' && (
+            <p className="text-red-400 text-[0.75rem] text-center py-2">Something went wrong. Please try again.</p>
+          )}
 
           <button type="submit" disabled={status === 'submitting'}
             className="w-full py-5 bg-forest text-white font-bold rounded-[20px] transition-all duration-300 hover:bg-sage hover:text-dark hover:scale-[1.02] hover:shadow-[0_20px_50px_rgba(74,140,92,0.2)] disabled:opacity-50 flex items-center justify-center gap-3">

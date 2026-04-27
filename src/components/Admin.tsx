@@ -1,12 +1,38 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, Users, Check, X, Image } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Check, X, Image, AlertCircle } from 'lucide-react';
 import { db, storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 
+const STATIC_EVENTS = [
+  { id: 'static-1', title: 'Green City Cycling Rally', date: '03', month: 'May', time: '6:00 AM', location: 'Connaught Place, Delhi', tag: 'Cycling' },
+  { id: 'static-2', title: 'Yamuna Riverbank Plantation', date: '08', month: 'May', time: '7:00 AM', location: 'Yamuna Ghat, Delhi', tag: 'Plantation' },
+  { id: 'static-3', title: 'Juhu Beach Cleanup Drive', date: '15', month: 'May', time: '8:00 AM', location: 'Juhu Beach, Mumbai', tag: 'Cleanup' },
+];
+
+function getTodayMin() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split('T')[0];
+}
+
+function parseDatetime(dateStr: string, timeStr: string) {
+  const d = new Date(dateStr);
+  const day = d.getDate().toString().padStart(2, '0');
+  const month = d.toLocaleString('en-US', { month: 'short' });
+  const [h, m] = timeStr.split(':');
+  const hour = parseInt(h);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const h12 = (hour % 12 || 12).toString();
+  const time = `${h12}:${m} ${ampm}`;
+  return { day, month, time };
+}
+
+const DEFAULT_IMG = 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=800&q=80';
+
 export default function Admin() {
-  const [status, setStatus] = useState<string | null>(null);
+  const [submitStatus, setSubmitStatus] = useState<{ type: 'success' | 'error' | 'loading'; msg: string } | null>(null);
   const [volunteers, setVolunteers] = useState<any[]>([]);
   const [volunteerTab, setVolunteerTab] = useState<'pending' | 'confirmed' | 'rejected'>('pending');
   const [events, setEvents] = useState<any[]>([]);
@@ -15,8 +41,8 @@ export default function Admin() {
   const [eventImageFile, setEventImageFile] = useState<File | null>(null);
   const [eventImagePreview, setEventImagePreview] = useState<string>('');
   const [adminTab, setAdminTab] = useState<'events' | 'volunteers'>('events');
+  const [volunteerStatus, setVolunteerStatus] = useState<string | null>(null);
 
-  // Real-time volunteers
   useEffect(() => {
     const q = query(collection(db, 'volunteers'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, snap =>
@@ -25,7 +51,6 @@ export default function Admin() {
     return () => unsub();
   }, []);
 
-  // Real-time events list
   useEffect(() => {
     const q = query(collection(db, 'events'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, snap =>
@@ -34,12 +59,16 @@ export default function Admin() {
     return () => unsub();
   }, []);
 
-  // Real-time registrants for selected event
   useEffect(() => {
-    if (!selectedEvent) return;
-    const q = query(collection(db, 'events', selectedEvent, 'registrants'), orderBy('createdAt', 'desc'));
+    if (!selectedEvent) { setRegistrants([]); return; }
+    const col = selectedEvent.startsWith('static-') ? 'staticRegistrations' : 'registrations';
+    const q = query(collection(db, col), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, snap =>
-      setRegistrants(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      setRegistrants(
+        snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter((r: any) => r.eventId === selectedEvent)
+      )
     );
     return () => unsub();
   }, [selectedEvent]);
@@ -47,10 +76,10 @@ export default function Admin() {
   const handleVolunteer = async (id: string, action: 'confirmed' | 'rejected') => {
     try {
       await updateDoc(doc(db, 'volunteers', id), { status: action });
-      setStatus(action === 'confirmed' ? 'Volunteer Confirmed ✅' : 'Request Rejected ❌');
-      setTimeout(() => setStatus(null), 3000);
+      setVolunteerStatus(action === 'confirmed' ? 'Volunteer Confirmed ✅' : 'Request Rejected ❌');
+      setTimeout(() => setVolunteerStatus(null), 3000);
     } catch (err: any) {
-      setStatus(`Error: ${err.message}`);
+      setVolunteerStatus(`Error: ${err.message}`);
     }
   };
 
@@ -58,39 +87,51 @@ export default function Admin() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const title = fd.get('title') as string;
-    const date = fd.get('date') as string;
-    const month = fd.get('month') as string;
-    const time = fd.get('time') as string;
+    const eventDate = fd.get('eventDate') as string;
+    const eventTime = fd.get('eventTime') as string;
     const location = fd.get('location') as string;
     const tag = fd.get('tag') as string;
     const description = fd.get('description') as string;
 
-    if (!eventImageFile) {
-      setStatus('Please select an event image.');
+    if (!title || !eventDate || !eventTime || !location) {
+      setSubmitStatus({ type: 'error', msg: 'Please fill all required fields.' });
       return;
     }
 
-    setStatus('Creating event... ☁️');
-    try {
-      const imgRef = ref(storage, `events/${Date.now()}-${eventImageFile.name}`);
-      await uploadBytes(imgRef, eventImageFile);
-      const imgUrl = await getDownloadURL(imgRef);
+    const { day, month, time } = parseDatetime(eventDate, eventTime);
+    setSubmitStatus({ type: 'loading', msg: 'Publishing event...' });
 
+    let imgUrl = DEFAULT_IMG;
+
+    // Try to upload image; fall back to default if Storage rules block it
+    if (eventImageFile) {
+      try {
+        const imgRef = ref(storage, `events/${Date.now()}-${eventImageFile.name}`);
+        await uploadBytes(imgRef, eventImageFile);
+        imgUrl = await getDownloadURL(imgRef);
+      } catch (storageErr: any) {
+        console.warn('Storage upload failed, using default image:', storageErr.message);
+        // Keep DEFAULT_IMG — event still gets created
+      }
+    }
+
+    try {
       await addDoc(collection(db, 'events'), {
-        title, date, month, time, location, tag, description,
+        title, date: day, month, time, location, tag, description,
         img: imgUrl,
         createdAt: serverTimestamp()
       });
-
-      setStatus('Event Published! 📅');
-      setTimeout(() => setStatus(null), 3000);
+      setSubmitStatus({ type: 'success', msg: 'Event published! 📅 It now appears on the homepage.' });
+      setTimeout(() => setSubmitStatus(null), 5000);
       setEventImageFile(null);
       setEventImagePreview('');
       (e.target as HTMLFormElement).reset();
     } catch (err: any) {
-      setStatus(`Error: ${err.message}`);
+      setSubmitStatus({ type: 'error', msg: `Firestore error: ${err.message}` });
     }
   };
+
+  const allDropdownEvents = [...events, ...STATIC_EVENTS];
 
   return (
     <div className="min-h-screen bg-[#0a160f] text-white font-sans p-6 md:p-10 selection:bg-mint/30">
@@ -103,23 +144,19 @@ export default function Admin() {
             EcoVerse <span className="text-white/40 font-medium">Control Center</span>
           </h1>
         </div>
-        {status && (
+        {volunteerStatus && (
           <div className="px-6 py-2 bg-mint/10 border border-mint/30 rounded-full text-[0.7rem] font-black uppercase tracking-[2px] text-mint animate-pulse">
-            {status}
+            {volunteerStatus}
           </div>
         )}
       </nav>
 
-      {/* Top-level tab switcher */}
+      {/* Top-level tabs */}
       <div className="max-w-6xl mx-auto flex gap-3 mb-8">
         {([['events', '📅 Events'], ['volunteers', '🌿 Volunteers']] as const).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setAdminTab(key)}
+          <button key={key} onClick={() => setAdminTab(key)}
             className={`px-6 py-2.5 rounded-2xl text-[0.7rem] font-black uppercase tracking-[2px] transition-all ${
-              adminTab === key
-                ? 'bg-mint text-dark'
-                : 'bg-white/5 border border-white/10 text-white/40 hover:bg-white/10'
+              adminTab === key ? 'bg-mint text-dark' : 'bg-white/5 border border-white/10 text-white/40 hover:bg-white/10'
             }`}
           >
             {label}
@@ -143,22 +180,24 @@ export default function Admin() {
               </div>
 
               <form onSubmit={handleCreateEvent} className="space-y-5">
-                {/* Event Image Upload */}
+                {/* Image upload — optional */}
                 <div>
-                  <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-2">Event Image *</label>
+                  <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-2">
+                    Event Image <span className="text-white/20 normal-case font-normal">(optional — a default is used if skipped)</span>
+                  </label>
                   <div
-                    className="relative h-40 rounded-3xl border-2 border-dashed border-white/10 overflow-hidden flex items-center justify-center hover:border-gold/30 hover:bg-gold/5 transition-all cursor-pointer"
-                    onClick={() => document.getElementById('eventImg')?.click()}
+                    className="relative h-44 rounded-3xl border-2 border-dashed border-white/10 overflow-hidden flex items-center justify-center hover:border-gold/30 hover:bg-gold/5 transition-all cursor-pointer"
+                    onClick={() => document.getElementById('eventImgInput')?.click()}
                   >
                     {eventImagePreview
-                      ? <img src={eventImagePreview} className="w-full h-full object-cover" />
-                      : <div className="flex flex-col items-center gap-2 text-white/20">
+                      ? <img src={eventImagePreview} className="w-full h-full object-cover" alt="preview" />
+                      : <div className="flex flex-col items-center gap-2 text-white/20 pointer-events-none">
                           <Image className="w-8 h-8" />
-                          <span className="text-[0.6rem] font-bold uppercase tracking-[2px]">Upload Image</span>
+                          <span className="text-[0.6rem] font-bold uppercase tracking-[2px]">Click to upload</span>
                         </div>
                     }
                   </div>
-                  <input id="eventImg" type="file" accept="image/*" className="hidden"
+                  <input id="eventImgInput" type="file" accept="image/*" className="hidden"
                     onChange={e => {
                       const f = e.target.files?.[0];
                       if (f) { setEventImageFile(f); setEventImagePreview(URL.createObjectURL(f)); }
@@ -166,14 +205,16 @@ export default function Admin() {
                   />
                 </div>
 
+                {/* Title + Tag */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Event Title *</label>
-                    <input name="title" required placeholder="Beach Cleanup Drive" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all placeholder:text-white/10" />
+                    <input name="title" required placeholder="Beach Cleanup Drive"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all placeholder:text-white/10" />
                   </div>
                   <div>
-                    <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Tag / Category *</label>
-                    <select name="tag" required className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all appearance-none">
+                    <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Category *</label>
+                    <select name="tag" required className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all">
                       <option value="Cleanup">Cleanup</option>
                       <option value="Plantation">Plantation</option>
                       <option value="Cycling">Cycling</option>
@@ -184,42 +225,54 @@ export default function Admin() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                {/* Date + Time — calendar picker */}
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Day *</label>
-                    <input name="date" required placeholder="03" maxLength={2} className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all placeholder:text-white/10" />
+                    <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Date * (from tomorrow)</label>
+                    <input name="eventDate" type="date" required min={getTodayMin()}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all [color-scheme:dark]" />
                   </div>
                   <div>
-                    <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Month *</label>
-                    <select name="month" required className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all appearance-none">
-                      {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map(m => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Time *</label>
-                    <input name="time" required placeholder="7:00 AM" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all placeholder:text-white/10" />
+                    <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Start Time *</label>
+                    <input name="eventTime" type="time" required
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all [color-scheme:dark]" />
                   </div>
                 </div>
 
+                {/* Location */}
                 <div>
                   <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Location *</label>
-                  <input name="location" required placeholder="Juhu Beach, Mumbai" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all placeholder:text-white/10" />
+                  <input name="location" required placeholder="Juhu Beach, Mumbai"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all placeholder:text-white/10" />
                 </div>
 
+                {/* Description */}
                 <div>
-                  <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Short Description</label>
-                  <textarea name="description" rows={3} placeholder="What's this event about?" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all placeholder:text-white/10 resize-none" />
+                  <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Description</label>
+                  <textarea name="description" rows={3} placeholder="What's this event about?"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all placeholder:text-white/10 resize-none" />
                 </div>
 
-                <button type="submit" className="w-full py-4 bg-gold/20 border border-gold/30 rounded-2xl text-[0.7rem] font-black uppercase tracking-[2px] text-gold hover:bg-gold hover:text-dark transition-all">
-                  Publish Event 📅
+                {/* Inline status */}
+                {submitStatus && (
+                  <div className={`flex items-start gap-3 p-4 rounded-2xl text-[0.75rem] font-medium leading-relaxed ${
+                    submitStatus.type === 'success' ? 'bg-sage/10 border border-sage/20 text-sage'
+                    : submitStatus.type === 'error' ? 'bg-red-500/10 border border-red-500/20 text-red-400'
+                    : 'bg-gold/10 border border-gold/20 text-gold'
+                  }`}>
+                    {submitStatus.type === 'error' && <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+                    {submitStatus.msg}
+                  </div>
+                )}
+
+                <button type="submit" disabled={submitStatus?.type === 'loading'}
+                  className="w-full py-4 bg-gold/20 border border-gold/30 rounded-2xl text-[0.7rem] font-black uppercase tracking-[2px] text-gold hover:bg-gold hover:text-dark transition-all disabled:opacity-50">
+                  {submitStatus?.type === 'loading' ? 'Publishing...' : 'Publish Event 📅'}
                 </button>
               </form>
             </div>
 
-            {/* Event Registrants Panel */}
+            {/* Registrants Panel */}
             <div className="p-8 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-md flex flex-col">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-2xl bg-sage/20 flex items-center justify-center">
@@ -228,36 +281,25 @@ export default function Admin() {
                 <h2 className="text-xl font-display font-bold">Event Registrants</h2>
               </div>
 
-              {/* Event selector */}
               <div className="mb-5">
                 <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-2">Select Event</label>
-                <select
-                  value={selectedEvent}
-                  onChange={e => setSelectedEvent(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-sage/50 outline-none transition-all appearance-none"
-                >
+                <select value={selectedEvent} onChange={e => setSelectedEvent(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-sage/50 outline-none transition-all">
                   <option value="">— Choose an event —</option>
-                  {events.map(ev => (
+                  {allDropdownEvents.map(ev => (
                     <option key={ev.id} value={ev.id}>{ev.date} {ev.month} — {ev.title}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Registrant list */}
               <div className="flex-1 overflow-y-auto max-h-[480px] space-y-3 pr-1">
                 {!selectedEvent ? (
-                  <div className="text-center py-16 text-white/20 text-[0.65rem] font-bold uppercase tracking-[2px]">
-                    Select an event above
-                  </div>
+                  <div className="text-center py-16 text-white/20 text-[0.65rem] font-bold uppercase tracking-[2px]">Select an event above</div>
                 ) : registrants.length === 0 ? (
-                  <div className="text-center py-16 text-white/20 text-[0.65rem] font-bold uppercase tracking-[2px]">
-                    No registrants yet
-                  </div>
+                  <div className="text-center py-16 text-white/20 text-[0.65rem] font-bold uppercase tracking-[2px]">No registrants yet</div>
                 ) : (
                   <>
-                    <div className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/30 mb-3">
-                      {registrants.length} registered
-                    </div>
+                    <div className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/30 mb-3">{registrants.length} registered</div>
                     {registrants.map(r => (
                       <div key={r.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all">
                         <div className="flex justify-between items-start gap-2">
@@ -266,18 +308,11 @@ export default function Admin() {
                             <div className="text-[0.6rem] text-white/40">{r.email}</div>
                             {r.phone && <div className="text-[0.55rem] text-white/30 mt-0.5">{r.phone}</div>}
                           </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <span className="px-2 py-1 bg-sage/10 rounded-lg text-[0.5rem] font-black text-sage uppercase tracking-[1px]">
-                              {r.participants || 1} person{(r.participants || 1) > 1 ? 's' : ''}
-                            </span>
-                            <span className="text-[0.45rem] text-white/20">
-                              {r.createdAt?.toDate?.()?.toLocaleDateString?.() || ''}
-                            </span>
-                          </div>
+                          <span className="px-2 py-1 bg-sage/10 rounded-lg text-[0.5rem] font-black text-sage uppercase tracking-[1px]">
+                            {r.participants || 1} person{(r.participants || 1) > 1 ? 's' : ''}
+                          </span>
                         </div>
-                        {r.note && (
-                          <p className="text-[0.6rem] text-white/30 italic border-l border-white/10 pl-3 mt-2 leading-relaxed line-clamp-2">{r.note}</p>
-                        )}
+                        {r.note && <p className="text-[0.6rem] text-white/30 italic border-l border-white/10 pl-3 mt-2 leading-relaxed line-clamp-2">{r.note}</p>}
                       </div>
                     ))}
                   </>
@@ -333,9 +368,7 @@ export default function Admin() {
                           {v.interest}
                         </span>
                       </div>
-                      {v.message && (
-                        <p className="text-[0.6rem] text-white/30 italic border-l border-white/10 pl-3 mt-2 mb-3 leading-relaxed line-clamp-2">{v.message}</p>
-                      )}
+                      {v.message && <p className="text-[0.6rem] text-white/30 italic border-l border-white/10 pl-3 mt-2 mb-3 leading-relaxed line-clamp-2">{v.message}</p>}
                       {v.status === 'pending' && (
                         <div className="flex gap-2 mt-3">
                           <button onClick={() => handleVolunteer(v.id, 'confirmed')}
