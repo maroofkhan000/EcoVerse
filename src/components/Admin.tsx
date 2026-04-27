@@ -214,13 +214,13 @@ export default function Admin() {
                   </div>
                   <div>
                     <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Category *</label>
-                    <select name="tag" required className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all">
-                      <option value="Cleanup">Cleanup</option>
-                      <option value="Plantation">Plantation</option>
-                      <option value="Cycling">Cycling</option>
-                      <option value="Workshop">Workshop</option>
-                      <option value="Rally">Rally</option>
-                      <option value="Other">Other</option>
+                    <select name="tag" required className="w-full bg-[#0f1f15] border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] text-white focus:border-gold/50 outline-none transition-all">
+                      <option value="Cleanup" className="bg-[#0f1f15]">Cleanup</option>
+                      <option value="Plantation" className="bg-[#0f1f15]">Plantation</option>
+                      <option value="Cycling" className="bg-[#0f1f15]">Cycling</option>
+                      <option value="Workshop" className="bg-[#0f1f15]">Workshop</option>
+                      <option value="Rally" className="bg-[#0f1f15]">Rally</option>
+                      <option value="Other" className="bg-[#0f1f15]">Other</option>
                     </select>
                   </div>
                 </div>
@@ -284,10 +284,10 @@ export default function Admin() {
               <div className="mb-5">
                 <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-2">Select Event</label>
                 <select value={selectedEvent} onChange={e => setSelectedEvent(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-sage/50 outline-none transition-all">
-                  <option value="">— Choose an event —</option>
+                  className="w-full bg-[#0f1f15] border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] text-white focus:border-sage/50 outline-none transition-all">
+                  <option value="" className="bg-[#0f1f15]">— Choose an event —</option>
                   {allDropdownEvents.map(ev => (
-                    <option key={ev.id} value={ev.id}>{ev.date} {ev.month} — {ev.title}</option>
+                    <option key={ev.id} value={ev.id} className="bg-[#0f1f15]">{ev.date} {ev.month} — {ev.title}</option>
                   ))}
                 </select>
               </div>

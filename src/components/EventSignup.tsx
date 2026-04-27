@@ -175,8 +175,8 @@ export default function EventSignup() {
             <div className="space-y-2">
               <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/30 ml-1">Participants</label>
               <select value={formData.participants} onChange={e => setFormData({ ...formData, participants: e.target.value })}
-                className="w-full bg-white/5 border border-white/10 rounded-[20px] px-5 py-4 outline-none focus:border-sage/50 transition-all appearance-none">
-                {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} person{n > 1 ? 's' : ''}</option>)}
+                className="w-full bg-[#0f1f15] border border-white/10 rounded-[20px] px-5 py-4 text-white outline-none focus:border-sage/50 transition-all appearance-none">
+                {[1, 2, 3, 4, 5].map(n => <option key={n} value={n} className="bg-[#0f1f15]">{n} person{n > 1 ? 's' : ''}</option>)}
               </select>
             </div>
           </div>
