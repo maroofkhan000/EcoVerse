@@ -61,8 +61,8 @@ export default function Admin() {
 
   useEffect(() => {
     if (!selectedEvent) { setRegistrants([]); return; }
-    const col = selectedEvent.startsWith('static-') ? 'staticRegistrations' : 'registrations';
-    const q = query(collection(db, col), orderBy('createdAt', 'desc'));
+    // Always query flat 'registrations' collection, filter by eventId
+    const q = query(collection(db, 'registrations'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, snap =>
       setRegistrants(
         snap.docs
