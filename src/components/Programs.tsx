@@ -159,14 +159,16 @@ function ProgramCard({ prog, index }: { prog: any, index: number }) {
         <div className="absolute top-6 right-6 px-3 py-1.5 bg-sage/60 backdrop-blur-md rounded-full text-[0.65rem] font-bold uppercase tracking-[2px] text-white z-20 pointer-events-none border border-white/20">Restored</div>
       </div>
       
-      {/* Gradient Overlays - Matches Live behavior */}
+      {/* Gradient Overlays - clipped to restored image area */}
       <div 
-        className={`absolute inset-0 bg-gradient-to-t from-dark via-dark/40 to-transparent transition-opacity duration-1000 z-20 pointer-events-none ${(!isAnimating && sliderPos > 50) ? 'opacity-80' : 'opacity-0'}`}
+        className={`absolute inset-0 bg-gradient-to-t from-dark via-dark/40 to-transparent z-20 pointer-events-none ${isAnimating ? 'opacity-0' : 'opacity-80'}`}
+        style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
       ></div>
 
-      {/* Content Container - Matches Live behavior */}
+      {/* Content Container - clipped to restored image area */}
       <div 
-        className={`absolute inset-0 p-8 md:p-12 flex flex-col justify-end pointer-events-none z-30 transition-all duration-1000 ${(!isAnimating && sliderPos > 50) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+        className={`absolute inset-0 p-8 md:p-12 flex flex-col justify-end pointer-events-none z-30 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
+        style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
       >
         <div className="transform transition-transform duration-500 ease-out group-hover:translate-y-0">
           <div className="flex items-center gap-4 mb-5">

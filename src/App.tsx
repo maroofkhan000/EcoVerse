@@ -14,6 +14,7 @@ import Contact from './components/Contact';
 import Footer from './components/Footer';
 import Blog from './components/Blog';
 import Admin from './components/Admin';
+import VolunteerSignup from './components/VolunteerSignup';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -73,6 +74,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/volunteer" element={<VolunteerSignup />} />
       </Routes>
     </>
   );

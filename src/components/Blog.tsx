@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Send, Image as ImageIcon, Type, Globe, PenTool, Flame, Clock, Share2 } from 'lucide-react';
+import { ArrowLeft, Send, Image as ImageIcon, Type, PenTool, Flame, Clock, Share2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Blog() {

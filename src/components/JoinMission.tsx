@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function JoinMission() {
   return (
@@ -51,9 +51,12 @@ export default function JoinMission() {
                 </p>
               </div>
 
-              <button className="whitespace-nowrap px-10 py-5 bg-forest text-white font-bold rounded-2xl text-md transition-all duration-300 hover:bg-sage hover:text-dark hover:scale-[1.05] hover:shadow-[0_20px_50px_rgba(74,140,92,0.2)]">
-                Sign Up to Volunteer 
-              </button>
+              <Link
+                to="/volunteer"
+                className="whitespace-nowrap px-10 py-5 bg-forest text-white font-bold rounded-2xl text-md transition-all duration-300 hover:bg-sage hover:text-dark hover:scale-[1.05] hover:shadow-[0_20px_50px_rgba(74,140,92,0.2)]"
+              >
+                Sign Up to Volunteer
+              </Link>
             </div>
           </div>
         </div>

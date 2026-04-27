@@ -1,4 +1,3 @@
-import communityImg from '../image/community-planting-joyful-teamwork-outdoors_53876-1137960.avif';
 
 export default function Community() {
   const cards = [

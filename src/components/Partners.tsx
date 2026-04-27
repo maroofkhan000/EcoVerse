@@ -8,9 +8,6 @@ export default function Partners() {
     { name: 'AquaShield', type: 'Resource Partner', logo: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=120&h=120&q=80' },
   ];
 
-  const benefits = [
-    { title: 'CSR Compliance', desc: 'Fully audited projects that meet all corporate social responsibility mandates and environmental standards.' },
-  ];
 
   return (
     <section id="partners" className="py-10 px-6 md:px-20 bg-[#21372a] relative overflow-hidden">

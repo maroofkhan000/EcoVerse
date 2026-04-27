@@ -1,14 +1,35 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Upload, Layout, Calendar, Users } from 'lucide-react';
+import { ArrowLeft, Upload, Layout, Calendar, Users, Check, X } from 'lucide-react';
 import { db, storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 
 export default function Admin() {
   const [status, setStatus] = useState<string | null>(null);
   const [previews, setPreviews] = useState<{[key: string]: File}>({});
   const [previewUrls, setPreviewUrls] = useState<{[key: string]: string}>({});
+  const [volunteers, setVolunteers] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'rejected'>('pending');
+
+  useEffect(() => {
+    const q = query(collection(db, 'volunteers'), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, snap => {
+      setVolunteers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => unsub();
+  }, []);
+
+  const handleVolunteer = async (id: string, action: 'confirmed' | 'rejected') => {
+    try {
+      await updateDoc(doc(db, 'volunteers', id), { status: action });
+      setStatus(action === 'confirmed' ? 'Volunteer Confirmed ✅' : 'Request Rejected ❌');
+      setTimeout(() => setStatus(null), 3000);
+    } catch (err: any) {
+      setStatus(`Error: ${err.message}`);
+    }
+  };
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, name: string) => {
     if (e.target.files && e.target.files[0]) {
@@ -181,16 +202,74 @@ export default function Admin() {
           </div>
 
           <div className="p-8 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-md">
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-4 mb-5">
               <Users className="w-5 h-5 text-sage" />
               <h3 className="font-display font-bold">Volunteer Intake</h3>
+              <span className="ml-auto text-[0.55rem] font-black uppercase tracking-[1px] px-2 py-1 bg-sage/10 text-sage rounded-full">
+                {volunteers.filter(v => v.status === 'pending').length} pending
+              </span>
             </div>
-            <div className="text-center py-8">
-              <div className="text-3xl font-display font-black text-mint mb-1">24</div>
-              <div className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40">Pending Requests</div>
-              <button className="mt-6 w-full py-3 bg-white/10 rounded-xl text-[0.6rem] font-black uppercase tracking-[2px] hover:bg-white/20 transition-all">
-                Review All
-              </button>
+
+            {/* Tabs */}
+            <div className="flex gap-2 mb-5">
+              {(['pending', 'confirmed', 'rejected'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex-1 py-2 rounded-xl text-[0.55rem] font-black uppercase tracking-[1px] transition-all ${
+                    activeTab === tab
+                      ? tab === 'pending' ? 'bg-gold/20 text-gold border border-gold/30'
+                        : tab === 'confirmed' ? 'bg-sage/20 text-sage border border-sage/30'
+                        : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                      : 'bg-white/5 text-white/30 border border-white/5'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* List */}
+            <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+              {volunteers.filter(v => v.status === activeTab).length === 0 ? (
+                <div className="text-center py-8 text-white/20 text-[0.65rem] font-bold uppercase tracking-[2px]">
+                  No {activeTab} requests
+                </div>
+              ) : (
+                volunteers.filter(v => v.status === activeTab).map(v => (
+                  <div key={v.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all">
+                    <div className="flex justify-between items-start gap-2 mb-1">
+                      <div>
+                        <div className="text-[0.75rem] font-bold text-white">{v.name}</div>
+                        <div className="text-[0.6rem] text-white/40">{v.email}</div>
+                        {v.phone && <div className="text-[0.55rem] text-white/30">{v.phone}</div>}
+                      </div>
+                      <span className="shrink-0 px-2 py-1 bg-sage/10 rounded-lg text-[0.5rem] font-black text-sage uppercase tracking-[1px]">
+                        {v.interest}
+                      </span>
+                    </div>
+                    {v.message && (
+                      <p className="text-[0.6rem] text-white/30 italic border-l border-white/10 pl-3 mt-2 mb-3 leading-relaxed line-clamp-2">{v.message}</p>
+                    )}
+                    {v.status === 'pending' && (
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          onClick={() => handleVolunteer(v.id, 'confirmed')}
+                          className="flex-1 py-2 flex items-center justify-center gap-1.5 bg-sage/10 border border-sage/20 rounded-xl text-[0.55rem] font-black uppercase tracking-[1px] text-sage hover:bg-sage hover:text-dark transition-all"
+                        >
+                          <Check className="w-3 h-3" /> Approve
+                        </button>
+                        <button
+                          onClick={() => handleVolunteer(v.id, 'rejected')}
+                          className="flex-1 py-2 flex items-center justify-center gap-1.5 bg-red-500/10 border border-red-500/20 rounded-xl text-[0.55rem] font-black uppercase tracking-[1px] text-red-400 hover:bg-red-500/30 transition-all"
+                        >
+                          <X className="w-3 h-3" /> Reject
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
