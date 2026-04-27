@@ -24,6 +24,7 @@ export default function Programs() {
     {
       tag: 'River Restoration', 
       name: 'Living Rivers Project',
+      desc: "Revitalizing urban waterways through natural filtration and debris removal. Witness the return of biodiversity to our local rivers.",
       isSlider: true,
       before: riverBefore,
       after: riverAfter,
@@ -33,6 +34,7 @@ export default function Programs() {
     {
       tag: 'Beach Cleanup', 
       name: 'Coastal Guard Project',
+      desc: "Clearing our shores of plastic pollution and restoring marine habitats. Join our weekly drives to keep our oceans healthy and clean.",
       isSlider: true,
       before: beachBefore,
       after: beachAfter,
@@ -96,7 +98,7 @@ function ProgramCard({ prog, index }: { prog: any, index: number }) {
       if (entries[0].isIntersecting) {
         setIsAnimating(true);
         setTimeout(() => {
-          setSliderPos(100);
+          setSliderPos(99); // Stop at 99% to keep the slider line visible
           setTimeout(() => setIsAnimating(false), 3500);
         }, 400 + (index * 300));
         observer.disconnect();
@@ -113,64 +115,60 @@ function ProgramCard({ prog, index }: { prog: any, index: number }) {
       className="program-card relative h-[520px] overflow-hidden group reveal cursor-pointer rounded-[48px] border border-white/5 max-w-[480px] mx-auto w-full"
     >
       {/* Background Image / Slider */}
-      {prog.isSlider ? (
-        <div className="absolute inset-0 select-none overflow-hidden group/slider">
-          {/* Clean Image (Base) */}
-          <div 
-            className={`absolute inset-0 bg-cover ${prog.afterPos || 'bg-center'}`}
-            style={{ backgroundImage: `url('${prog.after}')` }}
-          ></div>
-          
-          {/* Dirty Image (Overlay - Clipped) */}
-          <div 
-            className={`absolute inset-0 bg-cover bg-center border-r-[3px] border-sage shadow-[10px_0_40px_rgba(0,0,0,0.6)] z-10 ${isAnimating ? 'transition-all duration-[3500ms] ease-in-out' : ''}`}
-            style={{ 
-              backgroundImage: `url('${prog.before}')`,
-              clipPath: `inset(0 0 0 ${sliderPos}%)` 
-            }}
-          ></div>
+      <div className="absolute inset-0 select-none overflow-hidden group/slider">
+        {/* Clean Image (Base) */}
+        <div 
+          className={`absolute inset-0 bg-cover ${prog.afterPos || 'bg-center'}`}
+          style={{ backgroundImage: `url('${prog.after}')` }}
+        ></div>
+        
+        {/* Dirty Image (Overlay - Clipped) */}
+        <div 
+          className={`absolute inset-0 bg-cover bg-center border-r-[3px] border-sage shadow-[10px_0_40px_rgba(0,0,0,0.6)] z-10 ${isAnimating ? 'transition-all duration-[3500ms] linear' : ''}`}
+          style={{ 
+            backgroundImage: `url('${prog.before}')`,
+            clipPath: `inset(0 0 0 ${sliderPos}%)` 
+          }}
+        ></div>
 
-          {/* Slider Handle (Decorative) */}
-          <div 
-            className={`absolute top-0 bottom-0 w-1 bg-sage z-20 pointer-events-none transition-opacity duration-300 group-hover/slider:opacity-100 ${isAnimating ? 'transition-all duration-[3500ms] ease-in-out' : ''}`}
-            style={{ left: `${sliderPos}%` }}
-          >
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-sage rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.4)]">
-              <div className="flex gap-1">
-                <div className="w-1 h-4 bg-dark/40 rounded-full"></div>
-                <div className="w-1 h-4 bg-dark/40 rounded-full"></div>
-              </div>
+        {/* Slider Handle (Decorative) */}
+        <div 
+          className={`absolute top-0 bottom-0 w-1 bg-sage z-20 pointer-events-none transition-opacity duration-300 group-hover/slider:opacity-100 ${isAnimating ? 'transition-all duration-[3500ms] linear' : ''}`}
+          style={{ left: `${sliderPos}%` }}
+        >
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-sage rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.4)]">
+            <div className="flex gap-1">
+              <div className="w-1 h-4 bg-dark/40 rounded-full"></div>
+              <div className="w-1 h-4 bg-dark/40 rounded-full"></div>
             </div>
           </div>
-
-          {/* Hidden Range Input for smooth control */}
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={sliderPos}
-            onChange={(e) => setSliderPos(Number(e.target.value))}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-30 appearance-none"
-          />
-
-          {/* Labels */}
-          <div className="absolute top-6 left-6 px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-full text-[0.65rem] font-bold uppercase tracking-[2px] text-white/80 z-20 pointer-events-none border border-white/10">Initial</div>
-          <div className="absolute top-6 right-6 px-3 py-1.5 bg-sage/60 backdrop-blur-md rounded-full text-[0.65rem] font-bold uppercase tracking-[2px] text-white z-20 pointer-events-none border border-white/20">Restored</div>
         </div>
-      ) : (
-        <div 
-          className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-out group-hover:scale-110"
-          style={{ backgroundImage: `url('${prog.img}')` }}
-        ></div>
-      )}
-      
-      {/* Gradient Overlays */}
-      <div className="absolute inset-0 bg-gradient-to-t from-dark via-dark/40 to-transparent opacity-80 transition-opacity duration-500 group-hover:opacity-90"></div>
-      <div className="absolute inset-0 bg-forest/20 mix-blend-multiply opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-      {/* Content Container */}
-      <div className="absolute inset-0 p-8 md:p-12 flex flex-col justify-end pointer-events-none">
-        <div className="transform translate-y-6 transition-transform duration-500 ease-out group-hover:translate-y-0">
+        {/* Hidden Range Input for smooth control */}
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={sliderPos}
+          onChange={(e) => setSliderPos(Number(e.target.value))}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-30 appearance-none"
+        />
+
+        {/* Labels */}
+        <div className="absolute top-6 left-6 px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-full text-[0.65rem] font-bold uppercase tracking-[2px] text-white/80 z-20 pointer-events-none border border-white/10">Initial</div>
+        <div className="absolute top-6 right-6 px-3 py-1.5 bg-sage/60 backdrop-blur-md rounded-full text-[0.65rem] font-bold uppercase tracking-[2px] text-white z-20 pointer-events-none border border-white/20">Restored</div>
+      </div>
+      
+      {/* Gradient Overlays - Matches Live behavior */}
+      <div 
+        className={`absolute inset-0 bg-gradient-to-t from-dark via-dark/40 to-transparent transition-opacity duration-1000 z-20 pointer-events-none ${(!isAnimating && sliderPos > 50) ? 'opacity-80' : 'opacity-0'}`}
+      ></div>
+
+      {/* Content Container - Matches Live behavior */}
+      <div 
+        className={`absolute inset-0 p-8 md:p-12 flex flex-col justify-end pointer-events-none z-30 transition-all duration-1000 ${(!isAnimating && sliderPos > 50) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+      >
+        <div className="transform transition-transform duration-500 ease-out group-hover:translate-y-0">
           <div className="flex items-center gap-4 mb-5">
             <span className="text-4xl filter drop-shadow-lg group-hover:scale-125 transition-transform duration-500">{prog.icon}</span>
             <div className="h-px flex-1 bg-white/20"></div>
@@ -191,21 +189,10 @@ function ProgramCard({ prog, index }: { prog: any, index: number }) {
                 {prog.desc}
               </p>
             )}
-            
-            {!prog.isSlider ? (
-              <div className="inline-flex items-center gap-3 text-[0.9rem] text-sage font-medium group/btn">
-                <span className="relative overflow-hidden">
-                  Learn More
-                  <span className="absolute bottom-0 left-0 w-full h-px bg-sage transform -translate-x-[105%] group-hover/btn:translate-x-0 transition-transform duration-500"></span>
-                </span>
-                <span className="transform transition-transform duration-300 group-hover/btn:translate-x-2">→</span>
-              </div>
-            ) : (
-              <div className="text-[0.8rem] text-sage/80 font-medium tracking-[2px] uppercase flex items-center gap-2">
-                <span className="w-8 h-px bg-sage/30"></span>
-                Slide to compare
-              </div>
-            )}
+            <div className="text-[0.8rem] text-sage/80 font-medium tracking-[2px] uppercase flex items-center gap-2">
+              <span className="w-8 h-px bg-sage/30"></span>
+              Slide to compare
+            </div>
           </div>
         </div>
       </div>
