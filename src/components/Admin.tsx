@@ -1,24 +1,48 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Upload, Layout, Calendar, Users, Check, X } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Check, X, Image } from 'lucide-react';
 import { db, storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 
 export default function Admin() {
   const [status, setStatus] = useState<string | null>(null);
-  const [previews, setPreviews] = useState<{[key: string]: File}>({});
-  const [previewUrls, setPreviewUrls] = useState<{[key: string]: string}>({});
   const [volunteers, setVolunteers] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'rejected'>('pending');
+  const [volunteerTab, setVolunteerTab] = useState<'pending' | 'confirmed' | 'rejected'>('pending');
+  const [events, setEvents] = useState<any[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<string>('');
+  const [registrants, setRegistrants] = useState<any[]>([]);
+  const [eventImageFile, setEventImageFile] = useState<File | null>(null);
+  const [eventImagePreview, setEventImagePreview] = useState<string>('');
+  const [adminTab, setAdminTab] = useState<'events' | 'volunteers'>('events');
 
+  // Real-time volunteers
   useEffect(() => {
     const q = query(collection(db, 'volunteers'), orderBy('createdAt', 'desc'));
-    const unsub = onSnapshot(q, snap => {
-      setVolunteers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+    const unsub = onSnapshot(q, snap =>
+      setVolunteers(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    );
     return () => unsub();
   }, []);
+
+  // Real-time events list
+  useEffect(() => {
+    const q = query(collection(db, 'events'), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, snap =>
+      setEvents(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    );
+    return () => unsub();
+  }, []);
+
+  // Real-time registrants for selected event
+  useEffect(() => {
+    if (!selectedEvent) return;
+    const q = query(collection(db, 'events', selectedEvent, 'registrants'), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, snap =>
+      setRegistrants(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    );
+    return () => unsub();
+  }, [selectedEvent]);
 
   const handleVolunteer = async (id: string, action: 'confirmed' | 'rejected') => {
     try {
@@ -30,72 +54,38 @@ export default function Admin() {
     }
   };
 
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, name: string) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setPreviews(prev => ({ ...prev, [name]: file }));
-      setPreviewUrls(prev => ({ ...prev, [name]: URL.createObjectURL(file) }));
-    }
-  };
-
-  const uploadFile = async (file: File, path: string) => {
-    const fileRef = ref(storage, `${path}/${Date.now()}-${file.name}`);
-    await uploadBytes(fileRef, file);
-    return getDownloadURL(fileRef);
-  };
-
-  const handleSubmitProgram = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
+    const fd = new FormData(e.currentTarget);
+    const title = fd.get('title') as string;
+    const date = fd.get('date') as string;
+    const month = fd.get('month') as string;
+    const time = fd.get('time') as string;
+    const location = fd.get('location') as string;
+    const tag = fd.get('tag') as string;
+    const description = fd.get('description') as string;
 
-    if (!previews.icon || !previews.initialImg || !previews.finalImg) {
-      setStatus('Please select all required images.');
+    if (!eventImageFile) {
+      setStatus('Please select an event image.');
       return;
     }
 
-    setStatus('Uploading to Firebase... ☁️');
-
+    setStatus('Creating event... ☁️');
     try {
-      const [iconUrl, initialUrl, finalUrl] = await Promise.all([
-        uploadFile(previews.icon, 'icons'),
-        uploadFile(previews.initialImg, 'programs/initial'),
-        uploadFile(previews.finalImg, 'programs/restored')
-      ]);
+      const imgRef = ref(storage, `events/${Date.now()}-${eventImageFile.name}`);
+      await uploadBytes(imgRef, eventImageFile);
+      const imgUrl = await getDownloadURL(imgRef);
 
-      await addDoc(collection(db, 'programs'), {
-        title,
-        description,
-        icon: iconUrl,
-        initialImg: initialUrl,
-        finalImg: finalUrl,
+      await addDoc(collection(db, 'events'), {
+        title, date, month, time, location, tag, description,
+        img: imgUrl,
         createdAt: serverTimestamp()
       });
 
-      setStatus('Program Published to Cloud! 🌿');
+      setStatus('Event Published! 📅');
       setTimeout(() => setStatus(null), 3000);
-      setPreviews({});
-      setPreviewUrls({});
-      (e.target as HTMLFormElement).reset();
-    } catch (err: any) {
-      console.error(err);
-      setStatus(`Error: ${err.message}`);
-    }
-  };
-
-  const handleSubmitEvent = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const title = formData.get('title') as string;
-    const date = formData.get('date') as string;
-    const location = formData.get('location') as string;
-
-    try {
-      await addDoc(collection(db, 'events'), { title, date, location, createdAt: serverTimestamp() });
-      setStatus('Event Added! 📅');
-      setTimeout(() => setStatus(null), 3000);
+      setEventImageFile(null);
+      setEventImagePreview('');
       (e.target as HTMLFormElement).reset();
     } catch (err: any) {
       setStatus(`Error: ${err.message}`);
@@ -103,8 +93,8 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a160f] text-white font-sans p-6 md:p-12 selection:bg-mint/30">
-      <nav className="max-w-6xl mx-auto flex items-center justify-between mb-16">
+    <div className="min-h-screen bg-[#0a160f] text-white font-sans p-6 md:p-10 selection:bg-mint/30">
+      <nav className="max-w-6xl mx-auto flex items-center justify-between mb-10">
         <div className="flex items-center gap-6">
           <Link to="/" className="w-12 h-12 rounded-full border border-mint/20 flex items-center justify-center hover:bg-mint/10 transition-all group">
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
@@ -120,159 +110,251 @@ export default function Admin() {
         )}
       </nav>
 
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* Program Upload Section */}
-        <div className="lg:col-span-2 space-y-8">
-          <div className="p-8 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-mint/10 blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
-            
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-10 h-10 rounded-2xl bg-mint/20 flex items-center justify-center text-mint">
-                <Layout className="w-5 h-5" />
+      {/* Top-level tab switcher */}
+      <div className="max-w-6xl mx-auto flex gap-3 mb-8">
+        {([['events', '📅 Events'], ['volunteers', '🌿 Volunteers']] as const).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setAdminTab(key)}
+            className={`px-6 py-2.5 rounded-2xl text-[0.7rem] font-black uppercase tracking-[2px] transition-all ${
+              adminTab === key
+                ? 'bg-mint text-dark'
+                : 'bg-white/5 border border-white/10 text-white/40 hover:bg-white/10'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="max-w-6xl mx-auto">
+
+        {/* ── EVENTS TAB ── */}
+        {adminTab === 'events' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+            {/* Create Event Form */}
+            <div className="p-8 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-xl">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 rounded-2xl bg-gold/20 flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-gold" />
+                </div>
+                <h2 className="text-xl font-display font-bold">Create New Event</h2>
               </div>
-              <h2 className="text-xl font-display font-bold">Launch New Restoration Program</h2>
+
+              <form onSubmit={handleCreateEvent} className="space-y-5">
+                {/* Event Image Upload */}
+                <div>
+                  <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-2">Event Image *</label>
+                  <div
+                    className="relative h-40 rounded-3xl border-2 border-dashed border-white/10 overflow-hidden flex items-center justify-center hover:border-gold/30 hover:bg-gold/5 transition-all cursor-pointer"
+                    onClick={() => document.getElementById('eventImg')?.click()}
+                  >
+                    {eventImagePreview
+                      ? <img src={eventImagePreview} className="w-full h-full object-cover" />
+                      : <div className="flex flex-col items-center gap-2 text-white/20">
+                          <Image className="w-8 h-8" />
+                          <span className="text-[0.6rem] font-bold uppercase tracking-[2px]">Upload Image</span>
+                        </div>
+                    }
+                  </div>
+                  <input id="eventImg" type="file" accept="image/*" className="hidden"
+                    onChange={e => {
+                      const f = e.target.files?.[0];
+                      if (f) { setEventImageFile(f); setEventImagePreview(URL.createObjectURL(f)); }
+                    }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Event Title *</label>
+                    <input name="title" required placeholder="Beach Cleanup Drive" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all placeholder:text-white/10" />
+                  </div>
+                  <div>
+                    <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Tag / Category *</label>
+                    <select name="tag" required className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all appearance-none">
+                      <option value="Cleanup">Cleanup</option>
+                      <option value="Plantation">Plantation</option>
+                      <option value="Cycling">Cycling</option>
+                      <option value="Workshop">Workshop</option>
+                      <option value="Rally">Rally</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Day *</label>
+                    <input name="date" required placeholder="03" maxLength={2} className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all placeholder:text-white/10" />
+                  </div>
+                  <div>
+                    <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Month *</label>
+                    <select name="month" required className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all appearance-none">
+                      {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Time *</label>
+                    <input name="time" required placeholder="7:00 AM" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all placeholder:text-white/10" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Location *</label>
+                  <input name="location" required placeholder="Juhu Beach, Mumbai" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all placeholder:text-white/10" />
+                </div>
+
+                <div>
+                  <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-1.5">Short Description</label>
+                  <textarea name="description" rows={3} placeholder="What's this event about?" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-gold/50 outline-none transition-all placeholder:text-white/10 resize-none" />
+                </div>
+
+                <button type="submit" className="w-full py-4 bg-gold/20 border border-gold/30 rounded-2xl text-[0.7rem] font-black uppercase tracking-[2px] text-gold hover:bg-gold hover:text-dark transition-all">
+                  Publish Event 📅
+                </button>
+              </form>
             </div>
 
-            <form onSubmit={handleSubmitProgram} className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-2">
-                  <label className="text-[0.65rem] font-black uppercase tracking-[2px] text-white/40">Program Title</label>
-                  <input name="title" required placeholder="e.g. Mangrove Revival" className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:border-mint/50 outline-none transition-all placeholder:text-white/10" />
+            {/* Event Registrants Panel */}
+            <div className="p-8 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-md flex flex-col">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-2xl bg-sage/20 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-sage" />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[0.65rem] font-black uppercase tracking-[2px] text-white/40">Restoration Type</label>
-                  <input name="description" required placeholder="e.g. Coastal Ecosystem" className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:border-mint/50 outline-none transition-all placeholder:text-white/10" />
-                </div>
+                <h2 className="text-xl font-display font-bold">Event Registrants</h2>
               </div>
 
-              {/* Image Upload Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                  { id: 'icon', label: 'Program Icon' },
-                  { id: 'initialImg', label: 'Initial State' },
-                  { id: 'finalImg', label: 'Restored Vision' }
-                ].map((field) => (
-                  <div key={field.id} className="space-y-4">
-                    <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40">{field.label}</label>
-                    <div className="relative group/upload h-40 rounded-3xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-2 hover:border-mint/30 hover:bg-mint/5 transition-all cursor-pointer overflow-hidden">
-                      {previewUrls[field.id] ? (
-                        <img src={previewUrls[field.id]} className="w-full h-full object-cover" />
-                      ) : (
-                        <>
-                          <Upload className="w-6 h-6 text-white/20 group-hover/upload:text-mint transition-colors" />
-                          <span className="text-[0.6rem] font-bold text-white/20">Select File</span>
-                        </>
-                      )}
-                      <input 
-                        type="file" 
-                        name={field.id} 
-                        required 
-                        onChange={(e) => handleFileChange(e, field.id)}
-                        className="absolute inset-0 opacity-0 cursor-pointer" 
-                      />
-                    </div>
+              {/* Event selector */}
+              <div className="mb-5">
+                <label className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/40 block mb-2">Select Event</label>
+                <select
+                  value={selectedEvent}
+                  onChange={e => setSelectedEvent(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[0.85rem] focus:border-sage/50 outline-none transition-all appearance-none"
+                >
+                  <option value="">— Choose an event —</option>
+                  {events.map(ev => (
+                    <option key={ev.id} value={ev.id}>{ev.date} {ev.month} — {ev.title}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Registrant list */}
+              <div className="flex-1 overflow-y-auto max-h-[480px] space-y-3 pr-1">
+                {!selectedEvent ? (
+                  <div className="text-center py-16 text-white/20 text-[0.65rem] font-bold uppercase tracking-[2px]">
+                    Select an event above
                   </div>
+                ) : registrants.length === 0 ? (
+                  <div className="text-center py-16 text-white/20 text-[0.65rem] font-bold uppercase tracking-[2px]">
+                    No registrants yet
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-[0.6rem] font-black uppercase tracking-[2px] text-white/30 mb-3">
+                      {registrants.length} registered
+                    </div>
+                    {registrants.map(r => (
+                      <div key={r.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all">
+                        <div className="flex justify-between items-start gap-2">
+                          <div>
+                            <div className="text-[0.8rem] font-bold text-white">{r.name}</div>
+                            <div className="text-[0.6rem] text-white/40">{r.email}</div>
+                            {r.phone && <div className="text-[0.55rem] text-white/30 mt-0.5">{r.phone}</div>}
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="px-2 py-1 bg-sage/10 rounded-lg text-[0.5rem] font-black text-sage uppercase tracking-[1px]">
+                              {r.participants || 1} person{(r.participants || 1) > 1 ? 's' : ''}
+                            </span>
+                            <span className="text-[0.45rem] text-white/20">
+                              {r.createdAt?.toDate?.()?.toLocaleDateString?.() || ''}
+                            </span>
+                          </div>
+                        </div>
+                        {r.note && (
+                          <p className="text-[0.6rem] text-white/30 italic border-l border-white/10 pl-3 mt-2 leading-relaxed line-clamp-2">{r.note}</p>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── VOLUNTEERS TAB ── */}
+        {adminTab === 'volunteers' && (
+          <div className="max-w-xl">
+            <div className="p-8 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-md">
+              <div className="flex items-center gap-4 mb-5">
+                <Users className="w-5 h-5 text-sage" />
+                <h3 className="font-display font-bold text-lg">Volunteer Intake</h3>
+                <span className="ml-auto text-[0.55rem] font-black uppercase tracking-[1px] px-2 py-1 bg-sage/10 text-sage rounded-full">
+                  {volunteers.filter(v => v.status === 'pending').length} pending
+                </span>
+              </div>
+
+              <div className="flex gap-2 mb-5">
+                {(['pending', 'confirmed', 'rejected'] as const).map(tab => (
+                  <button key={tab} onClick={() => setVolunteerTab(tab)}
+                    className={`flex-1 py-2 rounded-xl text-[0.55rem] font-black uppercase tracking-[1px] transition-all ${
+                      volunteerTab === tab
+                        ? tab === 'pending' ? 'bg-gold/20 text-gold border border-gold/30'
+                          : tab === 'confirmed' ? 'bg-sage/20 text-sage border border-sage/30'
+                          : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                        : 'bg-white/5 text-white/30 border border-white/5'
+                    }`}
+                  >
+                    {tab}
+                  </button>
                 ))}
               </div>
 
-              <button type="submit" className="w-full py-5 bg-mint text-[#0a160f] rounded-3xl font-black uppercase tracking-[3px] text-[0.8rem] hover:shadow-[0_20px_50px_rgba(140,204,164,0.3)] hover:-translate-y-1 transition-all active:scale-[0.98]">
-                Broadcast to Platform 🌿
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* Quick Management Cards */}
-        <div className="space-y-6">
-          <div className="p-8 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-md">
-            <div className="flex items-center gap-4 mb-6">
-              <Calendar className="w-5 h-5 text-gold" />
-              <h3 className="font-display font-bold">Upcoming Events</h3>
-            </div>
-            <form onSubmit={handleSubmitEvent} className="space-y-4">
-              <input name="title" required placeholder="Event Name" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-[0.7rem] outline-none" />
-              <div className="flex gap-2">
-                <input name="date" required type="date" className="w-1/2 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-[0.7rem] outline-none" />
-                <input name="location" required placeholder="Location" className="w-1/2 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-[0.7rem] outline-none" />
-              </div>
-              <button type="submit" className="w-full py-3 bg-gold/20 border border-gold/30 rounded-xl text-[0.6rem] font-black uppercase tracking-[2px] hover:bg-gold/40 text-gold transition-all">
-                Publish Event +
-              </button>
-            </form>
-          </div>
-
-          <div className="p-8 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-md">
-            <div className="flex items-center gap-4 mb-5">
-              <Users className="w-5 h-5 text-sage" />
-              <h3 className="font-display font-bold">Volunteer Intake</h3>
-              <span className="ml-auto text-[0.55rem] font-black uppercase tracking-[1px] px-2 py-1 bg-sage/10 text-sage rounded-full">
-                {volunteers.filter(v => v.status === 'pending').length} pending
-              </span>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex gap-2 mb-5">
-              {(['pending', 'confirmed', 'rejected'] as const).map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-2 rounded-xl text-[0.55rem] font-black uppercase tracking-[1px] transition-all ${
-                    activeTab === tab
-                      ? tab === 'pending' ? 'bg-gold/20 text-gold border border-gold/30'
-                        : tab === 'confirmed' ? 'bg-sage/20 text-sage border border-sage/30'
-                        : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                      : 'bg-white/5 text-white/30 border border-white/5'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-
-            {/* List */}
-            <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
-              {volunteers.filter(v => v.status === activeTab).length === 0 ? (
-                <div className="text-center py-8 text-white/20 text-[0.65rem] font-bold uppercase tracking-[2px]">
-                  No {activeTab} requests
-                </div>
-              ) : (
-                volunteers.filter(v => v.status === activeTab).map(v => (
-                  <div key={v.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all">
-                    <div className="flex justify-between items-start gap-2 mb-1">
-                      <div>
-                        <div className="text-[0.75rem] font-bold text-white">{v.name}</div>
-                        <div className="text-[0.6rem] text-white/40">{v.email}</div>
-                        {v.phone && <div className="text-[0.55rem] text-white/30">{v.phone}</div>}
-                      </div>
-                      <span className="shrink-0 px-2 py-1 bg-sage/10 rounded-lg text-[0.5rem] font-black text-sage uppercase tracking-[1px]">
-                        {v.interest}
-                      </span>
-                    </div>
-                    {v.message && (
-                      <p className="text-[0.6rem] text-white/30 italic border-l border-white/10 pl-3 mt-2 mb-3 leading-relaxed line-clamp-2">{v.message}</p>
-                    )}
-                    {v.status === 'pending' && (
-                      <div className="flex gap-2 mt-3">
-                        <button
-                          onClick={() => handleVolunteer(v.id, 'confirmed')}
-                          className="flex-1 py-2 flex items-center justify-center gap-1.5 bg-sage/10 border border-sage/20 rounded-xl text-[0.55rem] font-black uppercase tracking-[1px] text-sage hover:bg-sage hover:text-dark transition-all"
-                        >
-                          <Check className="w-3 h-3" /> Approve
-                        </button>
-                        <button
-                          onClick={() => handleVolunteer(v.id, 'rejected')}
-                          className="flex-1 py-2 flex items-center justify-center gap-1.5 bg-red-500/10 border border-red-500/20 rounded-xl text-[0.55rem] font-black uppercase tracking-[1px] text-red-400 hover:bg-red-500/30 transition-all"
-                        >
-                          <X className="w-3 h-3" /> Reject
-                        </button>
-                      </div>
-                    )}
+              <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+                {volunteers.filter(v => v.status === volunteerTab).length === 0 ? (
+                  <div className="text-center py-10 text-white/20 text-[0.65rem] font-bold uppercase tracking-[2px]">
+                    No {volunteerTab} requests
                   </div>
-                ))
-              )}
+                ) : (
+                  volunteers.filter(v => v.status === volunteerTab).map(v => (
+                    <div key={v.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all">
+                      <div className="flex justify-between items-start gap-2 mb-1">
+                        <div>
+                          <div className="text-[0.75rem] font-bold text-white">{v.name}</div>
+                          <div className="text-[0.6rem] text-white/40">{v.email}</div>
+                          {v.phone && <div className="text-[0.55rem] text-white/30">{v.phone}</div>}
+                        </div>
+                        <span className="shrink-0 px-2 py-1 bg-sage/10 rounded-lg text-[0.5rem] font-black text-sage uppercase tracking-[1px]">
+                          {v.interest}
+                        </span>
+                      </div>
+                      {v.message && (
+                        <p className="text-[0.6rem] text-white/30 italic border-l border-white/10 pl-3 mt-2 mb-3 leading-relaxed line-clamp-2">{v.message}</p>
+                      )}
+                      {v.status === 'pending' && (
+                        <div className="flex gap-2 mt-3">
+                          <button onClick={() => handleVolunteer(v.id, 'confirmed')}
+                            className="flex-1 py-2 flex items-center justify-center gap-1.5 bg-sage/10 border border-sage/20 rounded-xl text-[0.55rem] font-black uppercase tracking-[1px] text-sage hover:bg-sage hover:text-dark transition-all">
+                            <Check className="w-3 h-3" /> Approve
+                          </button>
+                          <button onClick={() => handleVolunteer(v.id, 'rejected')}
+                            className="flex-1 py-2 flex items-center justify-center gap-1.5 bg-red-500/10 border border-red-500/20 rounded-xl text-[0.55rem] font-black uppercase tracking-[1px] text-red-400 hover:bg-red-500/30 transition-all">
+                            <X className="w-3 h-3" /> Reject
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

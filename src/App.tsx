@@ -15,6 +15,7 @@ import Footer from './components/Footer';
 import Blog from './components/Blog';
 import Admin from './components/Admin';
 import VolunteerSignup from './components/VolunteerSignup';
+import EventSignup from './components/EventSignup';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -75,6 +76,7 @@ function App() {
         <Route path="/blog" element={<Blog />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/volunteer" element={<VolunteerSignup />} />
+        <Route path="/event/:id" element={<EventSignup />} />
       </Routes>
     </>
   );
