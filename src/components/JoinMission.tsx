@@ -1,22 +1,25 @@
 import { Link } from 'react-router-dom';
 
+const particles = [...Array(20)].map(() => ({
+  width: Math.random() * 300 + 100 + 'px',
+  height: Math.random() * 300 + 100 + 'px',
+  left: Math.random() * 100 + '%',
+  top: Math.random() * 100 + '%',
+  animationDelay: Math.random() * 5 + 's',
+  animationDuration: Math.random() * 10 + 5 + 's'
+}));
+
 export default function JoinMission() {
+
   return (
     <section id="join" className="py-16 px-6 md:px-20 bg-[#0d1a0d] relative overflow-hidden">
       {/* Dynamic background particles */}
       <div className="absolute inset-0 opacity-20">
-        {[...Array(20)].map((_, i) => (
+        {particles.map((style, i) => (
           <div 
             key={i}
             className="absolute rounded-full bg-sage/30 blur-xl animate-pulse"
-            style={{
-              width: Math.random() * 300 + 100 + 'px',
-              height: Math.random() * 300 + 100 + 'px',
-              left: Math.random() * 100 + '%',
-              top: Math.random() * 100 + '%',
-              animationDelay: Math.random() * 5 + 's',
-              animationDuration: Math.random() * 10 + 5 + 's'
-            }}
+            style={style}
           ></div>
         ))}
       </div>

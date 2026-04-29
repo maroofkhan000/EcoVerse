@@ -2,7 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
-import { getAnalytics, isSupported } from "firebase/analytics";
+import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
 
 // Official EcoVerse Firebase configuration
 const firebaseConfig = {
@@ -24,7 +24,7 @@ export const storage = getStorage(app);
 export const auth = getAuth(app);
 
 // Analytics - Only initialized if supported in current environment
-export let analytics: any;
+export let analytics: Analytics | null = null;
 isSupported().then(supported => {
   if (supported) {
     analytics = getAnalytics(app);

@@ -1,30 +1,38 @@
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import heroBgImage from '../image/haathi3.png';
 
 export default function Hero() {
   return (
     <section id="hero" className="relative min-h-screen overflow-hidden">
       {/* Background */}
-      <div 
-        className="absolute inset-0 bg-center bg-cover bg-no-repeat animate-heroZoom"
+      <motion.div 
+        className="absolute inset-0 bg-center bg-cover bg-no-repeat"
+        initial={{ scale: 1.1, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 2, ease: "easeOut" }}
         style={{ backgroundImage: `linear-gradient(to bottom, rgba(13,31,21,0.55) 0%, rgba(13,31,21,0.05) 45%, rgba(13,31,21,0.75) 100%), url(${heroBgImage})` }}
-      ></div>
+      ></motion.div>
 
       {/* Heading — top of screen, clear of elephants */}
-      <div
-        className="relative z-10 text-center w-full px-6 pt-56 opacity-0 translate-y-10"
-        style={{ animation: 'heroReveal 1.4s cubic-bezier(0.16,1,0.3,1) forwards' }}
+      <motion.div
+        className="relative z-10 text-center w-full px-6 pt-56"
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
       >
         <h1 className="font-display text-[clamp(2.6rem,6vw,5rem)] font-black leading-[1] tracking-tight text-white mb-0 drop-shadow-lg">
           Restore the&nbsp;<em className="text-sage italic">Living</em>
           <span className="block text-mint mt-1">Earth</span>
         </h1>
-      </div>
+      </motion.div>
 
       {/* Buttons — pinned to bottom, below the elephant scene */}
-      <div
-        className="absolute bottom-7 left-0 right-0 z-10 flex gap-4 justify-center flex-wrap px-6 opacity-0"
-        style={{ animation: 'heroReveal 1.8s cubic-bezier(0.16,1,0.3,1) 0.3s forwards' }}
+      <motion.div
+        className="absolute bottom-7 left-0 right-0 z-10 flex gap-4 justify-center flex-wrap px-6"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.6 }}
       >
         <a href="#programs" className="no-underline">
           <button className="px-9 py-4 bg-fern text-white border-none rounded-full font-sans text-[0.92rem] font-medium cursor-pointer transition-all duration-300 relative overflow-hidden group hover:bg-moss hover:-translate-y-1 hover:shadow-[0_12px_32px_rgba(45,90,61,0.5)]">
@@ -38,13 +46,7 @@ export default function Hero() {
             Our Stories
           </button>
         </Link>
-      </div>
-
-      <style>{`
-        @keyframes heroReveal {
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+      </motion.div>
     </section>
   );
 }

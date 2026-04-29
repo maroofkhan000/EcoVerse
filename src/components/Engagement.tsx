@@ -4,6 +4,7 @@ import { db } from '../firebase';
 import { collection, onSnapshot, Timestamp } from 'firebase/firestore';
 import engagementBg from '../image/engagement_bg.png';
 import { EVENT_IMAGE_BY_TAG, STATIC_EVENTS } from '../data/events';
+import type { EventData } from '../types';
 
 function getTimestampValue(value: unknown) {
   return value && typeof value === 'object' && 'toMillis' in value
@@ -12,14 +13,14 @@ function getTimestampValue(value: unknown) {
 }
 
 export default function Engagement() {
-  const [dynamicEvents, setDynamicEvents] = useState<any[]>([]);
+  const [dynamicEvents, setDynamicEvents] = useState<EventData[]>([]);
 
   useEffect(() => {
     const unsub = onSnapshot(
       collection(db, 'events'),
       snap => {
-        const events = snap.docs.map(d => {
-          const data = d.data() as any;
+        const events: EventData[] = snap.docs.map(d => {
+          const data = d.data() as EventData;
           return {
             id: d.id,
             date: data.date || '--',

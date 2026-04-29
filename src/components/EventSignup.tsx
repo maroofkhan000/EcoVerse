@@ -4,20 +4,20 @@ import { ArrowLeft, Send, CheckCircle, MapPin, Calendar } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { STATIC_EVENTS } from '../data/events';
+import type { EventData } from '../types';
 
 export default function EventSignup() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
-  const passedEvent = (location.state as any) || null; // Passed from Engagement for static events
+  const passedEvent = (location.state as EventData) || null; // Passed from Engagement for static events
 
-  const [event, setEvent] = useState<any>(passedEvent);
+  const [event, setEvent] = useState<EventData | null>(passedEvent);
   const [loading, setLoading] = useState(!passedEvent);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', participants: '1', note: '' });
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     if (passedEvent) {
-      setLoading(false);
       return;
     }
 

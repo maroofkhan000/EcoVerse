@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { db } from '../firebase';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import type { ProgramData } from '../types';
 import plantationBefore from '../image/plantationnew.jpg';
 import plantationAfter from '../image/plantation_after_v3.png';
 import riverBefore from '../image/river_before.jpg';
@@ -9,7 +10,7 @@ import beachBefore from '../image/before_beach.png';
 import beachAfter from '../image/beach3.jpg';
 
 export default function Programs() {
-  const [dynamicPrograms, setDynamicPrograms] = useState<any[]>([]);
+  const [dynamicPrograms, setDynamicPrograms] = useState<ProgramData[]>([]);
 
   const featuredPrograms = [
     {
@@ -95,15 +96,15 @@ export default function Programs() {
       </div> 
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {allPrograms.map((prog, i) => (
-          <ProgramCard key={prog.id || i} prog={prog} index={i} />
+        {allPrograms.map((program: ProgramData, i: number) => (
+          <ProgramCard key={program.id || i} prog={program} index={i} />
         ))}
       </div>
     </section>
   );
 }
 
-function ProgramCard({ prog, index }: { prog: any, index: number }) {
+function ProgramCard({ prog, index }: { prog: ProgramData, index: number }) {
   const [sliderPos, setSliderPos] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const cardRef = useRef(null);
