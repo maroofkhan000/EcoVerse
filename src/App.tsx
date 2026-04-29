@@ -50,22 +50,47 @@ function App() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    // Small delay to ensure DOM is ready after route change
-    const timer = setTimeout(() => {
-      const reveals = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach(e => {
-          if (e.isIntersecting) {
-            e.target.classList.add('visible');
-            io.unobserve(e.target);
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    
+    const observeReveals = (root: HTMLElement | Document = document) => {
+      const reveals = root.querySelectorAll('.reveal, .reveal-left, .reveal-right');
+      reveals.forEach(r => io.observe(r));
+    };
+
+    // Initial scan
+    observeReveals();
+
+    // MutationObserver to catch dynamic elements added later (like Firestore events or blog posts)
+    const mo = new MutationObserver((mutations) => {
+      mutations.forEach(m => {
+        m.addedNodes.forEach(node => {
+          if (node instanceof HTMLElement) {
+            // Check if the node itself should be revealed
+            if (node.classList.contains('reveal') || 
+                node.classList.contains('reveal-left') || 
+                node.classList.contains('reveal-right')) {
+              io.observe(node);
+            }
+            // Also check all its children
+            observeReveals(node);
           }
         });
-      }, { threshold: 0.1 });
-      
-      reveals.forEach(r => io.observe(r));
-    }, 100);
+      });
+    });
+
+    mo.observe(document.body, { childList: true, subtree: true });
     
-    return () => clearTimeout(timer);
+    return () => {
+      io.disconnect();
+      mo.disconnect();
+    };
   }, [pathname]);
 
   return (

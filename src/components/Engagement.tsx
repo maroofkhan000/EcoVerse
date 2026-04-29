@@ -1,57 +1,59 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, Timestamp } from 'firebase/firestore';
 import engagementBg from '../image/engagement_bg.png';
-import eventPlantation from '../image/event_plantation.png';
-import eventBeach from '../image/event_beach.png';
-import eventCycling from '../image/event_cycling_city.png';
+import { EVENT_IMAGE_BY_TAG, STATIC_EVENTS } from '../data/events';
 
-const staticEvents = [
-  {
-    id: 'static-1',
-    date: '03', month: 'May',
-    img: eventCycling,
-    title: 'Green City Cycling Rally',
-    tag: 'Cycling',
-    location: 'Connaught Place, Delhi',
-    time: '6:00 AM',
-    isStatic: true
-  },
-  {
-    id: 'static-2',
-    date: '08', month: 'May',
-    img: eventPlantation,
-    title: 'Yamuna Riverbank Plantation',
-    tag: 'Plantation',
-    location: 'Yamuna Ghat, Delhi',
-    time: '7:00 AM',
-    isStatic: true
-  },
-  {
-    id: 'static-3',
-    date: '15', month: 'May',
-    img: eventBeach,
-    title: 'Juhu Beach Cleanup Drive',
-    tag: 'Cleanup',
-    location: 'Juhu Beach, Mumbai',
-    time: '8:00 AM',
-    isStatic: true
-  }
-];
+function getTimestampValue(value: unknown) {
+  return value && typeof value === 'object' && 'toMillis' in value
+    ? (value as Timestamp).toMillis()
+    : 0;
+}
 
 export default function Engagement() {
   const [dynamicEvents, setDynamicEvents] = useState<any[]>([]);
 
   useEffect(() => {
-    const q = query(collection(db, 'events'), orderBy('createdAt', 'desc'));
-    const unsub = onSnapshot(q, snap =>
-      setDynamicEvents(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    const unsub = onSnapshot(
+      collection(db, 'events'),
+      snap => {
+        const events = snap.docs.map(d => {
+          const data = d.data() as any;
+          return {
+            id: d.id,
+            date: data.date || '--',
+            month: data.month || '---',
+            img: data.img || EVENT_IMAGE_BY_TAG[data.tag] || STATIC_EVENTS[2].img,
+            title: data.title || 'Upcoming Event',
+            tag: data.tag || 'Event',
+            location: data.location || 'Location to be announced',
+            time: data.time || 'Time to be announced',
+            description: data.description || '',
+            createdAt: data.createdAt,
+            isStatic: false,
+          };
+        });
+        
+        // Sort: Newest first, fallback to 0 if createdAt is missing
+        events.sort((a, b) => getTimestampValue(b.createdAt) - getTimestampValue(a.createdAt));
+        setDynamicEvents(events);
+      },
+      err => console.error('Firestore events error:', err)
     );
     return () => unsub();
   }, []);
 
-  const allEvents = [...dynamicEvents, ...staticEvents];
+  // Robustness: ensure all elements with 'reveal' class eventually become visible
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const reveals = document.querySelectorAll('#events .reveal');
+      reveals.forEach(r => r.classList.add('visible'));
+    }, 1500); // 1.5s fallback to show everything if observer fails
+    return () => clearTimeout(timer);
+  }, [dynamicEvents]);
+
+  const allEvents = [...dynamicEvents, ...STATIC_EVENTS];
 
   return (
     <section id="events" className="py-16 px-6 md:px-20 bg-[#294235] relative overflow-hidden">
@@ -66,7 +68,7 @@ export default function Engagement() {
           <div className="text-[0.7rem] tracking-[4px] uppercase text-sage font-medium mb-4 flex items-center justify-center gap-4 before:content-[''] before:inline-block before:w-[36px] before:h-px before:bg-sage/30 after:content-[''] after:inline-block after:w-[36px] after:h-px after:bg-sage/30">
             Stay Active
           </div>
-          <h2 className="font-display text-[clamp(2.2rem,5.5vw,4rem)] font-black leading-[1.05] tracking-[-1.5px] mb-5">
+          <h2 className="font-display text-[clamp(2.2rem,5.5vw,4rem)] font-black leading-[1.05] tracking-[-1.5px] mb-5 text-white">
             Upcoming Events
           </h2>
         </div>
@@ -104,7 +106,7 @@ export default function Engagement() {
                 <div className="space-y-4 mb-8 mt-auto">
                   <div className="flex items-center gap-4 text-[0.95rem] text-[#0a160f]/60 font-medium">
                     <span className="text-forest text-lg">📍</span>
-                    {event.location}
+                    <span className="line-clamp-1">{event.location}</span>
                   </div>
                   <div className="flex items-center gap-4 text-[0.95rem] text-[#0a160f]/60 font-medium">
                     <span className="text-forest text-lg">⏰</span>
@@ -112,26 +114,23 @@ export default function Engagement() {
                   </div>
                 </div>
 
-                {event.isStatic ? (
-                  <Link
-                    to={`/event/${event.id}`}
-                    state={event}
-                    className="w-full py-4 bg-forest text-white rounded-2xl text-xs font-bold hover:bg-sage hover:text-dark transition-all shadow-lg hover:shadow-sage/20 text-center block"
-                  >
-                    Register for Event
-                  </Link>
-                ) : (
-                  <Link
-                    to={`/event/${event.id}`}
-                    className="w-full py-4 bg-forest text-white rounded-2xl text-xs font-bold hover:bg-sage hover:text-dark transition-all shadow-lg hover:shadow-sage/20 text-center block"
-                  >
-                    Register for Event
-                  </Link>
-                )}
+                <Link
+                  to={`/event/${event.id}`}
+                  state={event.isStatic ? event : undefined}
+                  className="w-full py-4 bg-forest text-white rounded-2xl text-xs font-bold hover:bg-sage hover:text-dark transition-all shadow-lg hover:shadow-sage/20 text-center block no-underline"
+                >
+                  Register for Event
+                </Link>
               </div>
             </div>
           ))}
         </div>
+        
+        {allEvents.length === 0 && (
+          <div className="text-center py-20 text-white/40 font-display italic">
+            No upcoming events at the moment. Check back soon!
+          </div>
+        )}
       </div>
     </section>
   );

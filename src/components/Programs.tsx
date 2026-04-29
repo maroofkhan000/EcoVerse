@@ -45,21 +45,36 @@ export default function Programs() {
 
   useEffect(() => {
     const q = query(collection(db, 'programs'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        // Map Firebase fields to ProgramCard fields
-        name: doc.data().title,
-        tag: doc.data().description,
-        before: doc.data().initialImg,
-        after: doc.data().finalImg,
-        isSlider: true, // New programs are sliders by default
-      }));
-      setDynamicPrograms(docs);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const docs = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          // Map Firebase fields to ProgramCard fields
+          name: doc.data().title,
+          tag: doc.data().description,
+          before: doc.data().initialImg,
+          after: doc.data().finalImg,
+          isSlider: true, // New programs are sliders by default
+        }));
+        setDynamicPrograms(docs);
+      },
+      (error) => {
+        console.error('Firestore programs error:', error);
+      }
+    );
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const reveals = document.querySelectorAll('#programs .reveal');
+      reveals.forEach((card) => card.classList.add('visible'));
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [dynamicPrograms]);
 
   const allPrograms = [...featuredPrograms, ...dynamicPrograms];
 

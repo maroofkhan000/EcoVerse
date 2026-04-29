@@ -68,7 +68,11 @@ export default function Partners() {
                 <div className="text-center md:text-left order-1 md:order-2 py-4">
                   <h4 className="font-display text-2xl md:text-3xl font-black text-[#0a160f] mb-4 leading-tight">Ready to lead the way?</h4>
                   <p className="text-[#0a160f]/60 text-[0.9rem] leading-relaxed mb-6 font-medium max-w-[360px]">
-                    Scale your environmental impact through our verified projects. Let's design a custom restoration strategy for your organization.
+                    Scale your{' '}
+                    <span className="inline-flex items-center rounded-full bg-[#0a160f] px-2.5 py-0.5 text-[0.72rem] font-black uppercase tracking-[1.5px] text-white align-middle">
+                      CSR
+                    </span>{' '}
+                    impact through our verified projects. Let's design a custom restoration strategy for your corporate sustainability goals.
                   </p>
                   
                   <button className="w-full md:w-auto px-10 py-4 bg-[#0a160f] text-white font-bold rounded-2xl text-[0.8rem] uppercase tracking-[2px] transition-all duration-300 hover:bg-[#1a2e23] hover:scale-[1.02] hover:shadow-2xl flex items-center justify-center gap-3">

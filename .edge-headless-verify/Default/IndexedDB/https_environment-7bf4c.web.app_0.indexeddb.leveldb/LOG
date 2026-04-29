@@ -1,0 +1,10 @@
+2026/04/28-17:22:05.438 5950 Creating DB C:\Users\91638\Desktop\Hackathon\ecoaction\.edge-headless-verify\Default\IndexedDB\https_environment-7bf4c.web.app_0.indexeddb.leveldb since it was missing.
+2026/04/28-17:22:05.446 5950 Reusing MANIFEST C:\Users\91638\Desktop\Hackathon\ecoaction\.edge-headless-verify\Default\IndexedDB\https_environment-7bf4c.web.app_0.indexeddb.leveldb/MANIFEST-000001
+2026/04/28-17:22:18.075 5e54 Level-0 table #5: started
+2026/04/28-17:22:18.081 5e54 Level-0 table #5: 1310 bytes OK
+2026/04/28-17:22:18.085 5e54 Delete type=0 #3
+2026/04/28-17:22:18.086 72fc Manual compaction at level-0 from '\x00\x01\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x02\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/04/28-17:22:18.463 5e54 Level-0 table #7: started
+2026/04/28-17:22:18.467 5e54 Level-0 table #7: 1413 bytes OK
+2026/04/28-17:22:18.472 5e54 Delete type=0 #4
+2026/04/28-17:22:18.473 72fc Manual compaction at level-0 from '\x00\x04\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x05\x00\x00\x00' @ 0 : 0; will stop at (end)

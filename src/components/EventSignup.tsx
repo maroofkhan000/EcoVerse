@@ -3,6 +3,7 @@ import { useParams, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Send, CheckCircle, MapPin, Calendar } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { STATIC_EVENTS } from '../data/events';
 
 export default function EventSignup() {
   const { id } = useParams<{ id: string }>();
@@ -15,16 +16,27 @@ export default function EventSignup() {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
   useEffect(() => {
-    // If event already loaded from state (static), skip Firestore fetch
-    if (passedEvent || !id || id.startsWith('static-')) {
+    if (passedEvent) {
       setLoading(false);
       return;
     }
+
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+
+    if (id.startsWith('static-')) {
+      setEvent(STATIC_EVENTS.find((ev) => ev.id === id) || null);
+      setLoading(false);
+      return;
+    }
+
     getDoc(doc(db, 'events', id)).then(snap => {
       if (snap.exists()) setEvent({ id: snap.id, ...snap.data() });
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [id]);
+  }, [id, passedEvent]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
