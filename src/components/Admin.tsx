@@ -158,7 +158,8 @@ export default function Admin() {
 
   const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
     const title = fd.get("title") as string;
     const eventDate = fd.get("eventDate") as string;
     const eventTime = fd.get("eventTime") as string;
@@ -208,7 +209,7 @@ export default function Admin() {
       setTimeout(() => setSubmitStatus(null), 6000);
       setEventImageFile(null);
       setEventImagePreview("");
-      e.currentTarget.reset();
+      form.reset();
     } catch (err: any) {
       setSubmitStatus({
         type: "error",
